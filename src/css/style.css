@@ -1,0 +1,12 @@
+button.restart_button {
+    font-size: xx-large;
+}
+
+button.activated_mine {
+    color: crimson;
+    accent-color: crimson;
+}
+
+label.mines_remaining label.time_remaining {
+    font-size: xx-large;
+}
