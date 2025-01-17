@@ -1,12 +1,178 @@
+/* Variables */
+:root {
+    --primary-color: #515558;
+    --secondary-color: white;
+    --accent-color: #FF0000;
+}
+
 button.restart_button {
     font-size: xx-large;
+    border-radius: 0;
+    border-top: 3px solid var(--secondary-color);
+    border-left: 3px solid var(--secondary-color);
+    border-right: 3px solid var(--primary-color);
+    border-bottom: 3px solid var(--primary-color);
+    background-color: #949494;
+    background-image: none;
+}
+
+button.restart_button:active {
+    border-top: 3px solid var(--primary-color);
+    border-left: 3px solid var(--primary-color);
+    border-right: 1px solid var(--primary-color);
+    border-bottom: 1px solid var(--primary-color);
 }
 
 button.activated_mine {
-    color: crimson;
-    accent-color: crimson;
+    color: var(--accent-color);
+    accent-color: var(--accent-color);
 }
 
-label.mines_remaining label.time_remaining {
+label.mines_remaining_label,
+label.time_remaining_label {
+    font-size: 250%;
+    margin: 0;
+    padding: 0;
+    line-height: 1;
+}
+
+.square-button {
+    aspect-ratio: 1/1;
+    min-width: 20px;
+    min-height: 20px;
+    border-radius: 0;
+    border-top: 3px solid var(--secondary-color);
+    border-left: 3px solid var(--secondary-color);
+    border-right: 3px solid var(--primary-color);
+    border-bottom: 3px solid var(--primary-color);
+    background-color: #949494;
+    background-image: none;
+}
+
+.square-button:active {
+    border: none;
+    background-color: #a7a8a8;
+}
+
+.seven-segment {
+    font-family: "Ubuntu Mono", monospace;
     font-size: xx-large;
+    font-weight: bold;
+    color: var(--accent-color);
+    background-color: #1A1A1A;
+}
+
+.main-box {
+    margin: -3px;
+}
+
+.inner-box {
+    border-top: 3px solid var(--secondary-color);
+    border-left: 3px solid var(--secondary-color);
+    background-color: #788088;
+    padding: 10px;
+}
+
+.top-box {
+    border-top: 3px solid var(--primary-color);
+    border-left: 3px solid var(--primary-color);
+    border-right: 3px solid var(--secondary-color);
+    border-bottom: 3px solid var(--secondary-color);
+    padding: 10px;
+}
+
+.bottom-box {
+    border-top: 3px solid var(--primary-color);
+    border-left: 3px solid var(--primary-color);
+    border-right: 3px solid var(--secondary-color);
+    border-bottom: 3px solid var(--secondary-color);
+    background-color: var(--primary-color);
+}
+
+.revealed-cell {
+    font-weight: bolder;
+    border: none;
+    background-color: #a7a8a8;
+    margin: 1px;
+}
+
+.lost-cell {
+    border: none;
+    background-color: var(--accent-color);
+}
+
+.number-one {
+    color: #0000FF;
+}
+
+.number-two {
+    color: #008000;
+}
+
+.number-three {
+    color: #FF0000;
+}
+
+.number-four {
+    color: #000080;
+}
+
+.number-five {
+    color: #800000;
+}
+
+.number-six {
+    color: #008080;
+}
+
+.number-seven {
+    color: #000000;
+}
+
+.number-eight {
+    color: #808080;
+}
+
+/* 
+General Styles
+ */
+
+button {
+    transition: all 0.2s;
+    transition-timing-function: ease-out;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+box.horizontal {
+    background-color: #eceacf;
+    border-radius: 0;
+    border-color: #000000;
+    color: #000000;
+    caret-color: #000000;
+    outline-color: #000000;
+    text-decoration-color: #000000;
+}
+
+.menu-bar {
+    background-color: #eceacf;
+    border-color: #000000;
+    border-radius: 0;
+    color: #000000;
+    caret-color: #000000;
+    outline-color: #000000;
+    text-decoration-color: #000000;
+}
+
+item {
+    background-color: #eceacf;
+    border-color: #000000;
+    color: #000000;
+    caret-color: #000000;
+    outline-color: #000000;
+    padding-bottom: 3px;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-top: 3px;
+    text-decoration-color: #000000;
 }
