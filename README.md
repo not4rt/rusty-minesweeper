@@ -5,7 +5,7 @@
 
 A reimplementation of the classic Windows XP Minesweeper, built with Rust and GTK4.
 
-![game-beginner2](https://github.com/user-attachments/assets/580412c6-2528-467b-af50-454fac145307)
+![game-beginner2](https://github.com/user-attachments/assets/247ae9be-f5d3-4ce2-b363-e069d6c8ea2c)
 
 
 ## ✨ Features
