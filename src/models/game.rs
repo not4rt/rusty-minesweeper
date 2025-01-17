@@ -1,31 +1,32 @@
 use std::fmt;
 
-#[derive(Debug, PartialEq, Eq)]
-pub enum GameState {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum GameStatus {
     Won,
     Lost,
-    Started,
+    InProgress,
 }
 
-impl GameState {
+impl GameStatus {
+    #[must_use]
     pub const fn is_over(&self) -> bool {
         matches!(self, Self::Won | Self::Lost)
     }
 }
 
-impl fmt::Display for GameState {
+impl fmt::Display for GameStatus {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Won => write!(f, "You Win!"),
             Self::Lost => write!(f, "You Lose!"),
-            Self::Started => write!(f, "Game In Progress"),
+            Self::InProgress => write!(f, "Game In Progress."),
         }
     }
 }
 
-impl Default for GameState {
+impl Default for GameStatus {
     fn default() -> Self {
-        Self::Started
+        Self::InProgress
     }
 }
 
@@ -49,8 +50,8 @@ impl GameDifficulty {
         mines_count: 100,
     };
     pub const CUSTOM: Self = Self {
-        board_size: 100,
-        mines_count: 100,
+        board_size: 150,
+        mines_count: 10,
     };
 }
 
