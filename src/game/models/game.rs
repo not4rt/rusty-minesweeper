@@ -12,14 +12,24 @@ impl GameStatus {
     pub const fn is_over(&self) -> bool {
         matches!(self, Self::Won | Self::Lost)
     }
+
+    #[must_use]
+    pub const fn is_won(&self) -> bool {
+        matches!(self, Self::Won)
+    }
+
+    #[must_use]
+    pub const fn is_lost(&self) -> bool {
+        matches!(self, Self::Lost)
+    }
 }
 
 impl fmt::Display for GameStatus {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Won => write!(f, "You Win!"),
-            Self::Lost => write!(f, "You Lose!"),
-            Self::InProgress => write!(f, "Game In Progress."),
+            Self::Won => write!(f, "😎"),
+            Self::Lost => write!(f, "👺"),
+            Self::InProgress => write!(f, "🙂"),
         }
     }
 }
@@ -30,7 +40,7 @@ impl Default for GameStatus {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct GameDifficulty {
     pub board_size: usize,
     pub mines_count: usize,

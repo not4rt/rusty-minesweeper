@@ -1,13 +1,14 @@
 use std::collections::HashSet;
 
 use crate::error::{GameError, GameResult};
-use crate::models::cell::{Cell, CellContent, CellPosition};
-use crate::models::game::GameDifficulty;
+use crate::game::models::cell::{Cell, CellContent, CellPosition};
+use crate::game::models::game::GameDifficulty;
 
+#[derive(PartialEq, Eq)]
 pub enum RevealResult {
-    GameOver,
     Continue,
-    AlreadyRevealed,
+    GameOver,
+    CantReveal,
 }
 
 #[derive(Debug, Clone)]
@@ -129,16 +130,17 @@ impl Board {
     pub fn reveal(&mut self, pos: CellPosition) -> GameResult<RevealResult> {
         self.validate_position(pos)?;
 
-        if self.cells[pos.x][pos.y].is_revealed() {
-            return Ok(RevealResult::AlreadyRevealed);
+        if self.cells[pos.x][pos.y].is_revealed() || self.cells[pos.x][pos.y].is_flagged() {
+            return Ok(RevealResult::CantReveal);
         }
 
         self.cells[pos.x][pos.y].reveal();
-        self.revealed_count = self.revealed_count.saturating_add(1);
 
         if self.cells[pos.x][pos.y].is_mine() {
             return Ok(RevealResult::GameOver);
         }
+
+        self.revealed_count = self.revealed_count.saturating_add(1);
 
         Ok(RevealResult::Continue)
     }

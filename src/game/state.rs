@@ -1,7 +1,7 @@
 use crate::error::GameResult;
-use crate::models::board::{Board, RevealResult};
-use crate::models::cell::CellPosition;
-use crate::models::game::{GameDifficulty, GameStatus};
+use crate::game::models::board::{Board, RevealResult};
+use crate::game::models::cell::CellPosition;
+use crate::game::models::game::{GameDifficulty, GameStatus};
 use std::collections::HashSet;
 use std::time::Instant;
 
@@ -56,26 +56,25 @@ impl GameState {
     ///
     /// # Errors
     /// Will return `GameError` if the position is invalid.
-    pub fn reveal_cell(&mut self, pos: CellPosition) -> GameResult<()> {
-        if self.status != GameStatus::InProgress {
-            return Ok(());
+    pub fn reveal_cell(&mut self, pos: CellPosition) -> GameResult<RevealResult> {
+        if self.status.is_over()
+            || self.board.cell(pos)?.is_revealed()
+            || self.board.cell(pos)?.is_flagged()
+        {
+            return Ok(RevealResult::CantReveal);
         }
 
-        if self.board.cell(pos)?.is_revealed() || self.board.cell(pos)?.is_flagged() {
-            return Ok(());
-        }
+        let reveal_result = self.reveal_area(pos)?;
 
-        let _ = self.reveal_area(pos);
-
-        if self.status != GameStatus::Lost {
+        if reveal_result != RevealResult::GameOver {
             self.check_win_condition();
         }
-        Ok(())
+        Ok(reveal_result)
     }
 
-    fn reveal_area(&mut self, pos: CellPosition) -> GameResult<()> {
-        match self.board.reveal(pos) {
-            Ok(RevealResult::Continue) => {
+    fn reveal_area(&mut self, pos: CellPosition) -> GameResult<RevealResult> {
+        match self.board.reveal(pos)? {
+            RevealResult::Continue => {
                 self.revealed_cells.insert(pos);
 
                 // If the cell is empty, reveal surrounding area
@@ -91,17 +90,17 @@ impl GameState {
                     }
                 }
             }
-            Ok(RevealResult::GameOver) => {
+            RevealResult::GameOver => {
                 self.revealed_cells.insert(pos);
                 self.status = GameStatus::Lost;
                 self.board.reveal_mines();
                 self.revealed_cells.extend(self.board.mine_positions());
+                return Ok(RevealResult::GameOver);
             }
-            Ok(RevealResult::AlreadyRevealed) => {}
-            Err(e) => return Err(e),
+            RevealResult::CantReveal => return Ok(RevealResult::CantReveal),
         }
 
-        Ok(())
+        Ok(RevealResult::Continue)
     }
 
     /// Toggles the flag of the cell at the given position.
@@ -179,7 +178,9 @@ impl GameState {
     /// # Panics
     /// Will panic if the game cannot be restarted with the new difficulty.
     pub fn change_difficulty(&mut self, difficulty: GameDifficulty) {
-        self.difficulty = difficulty;
+        if self.difficulty != difficulty {
+            self.difficulty = difficulty;
+        }
         self.restart()
             .expect("Failed to restart game. Bad difficulty?");
     }

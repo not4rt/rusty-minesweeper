@@ -1,6 +1,6 @@
 use relm4::RelmApp;
 use rusty_minesweeper::app::App;
-use rusty_minesweeper::models::game::GameDifficulty;
+use rusty_minesweeper::game::models::game::GameDifficulty;
 
 fn main() {
     let app = RelmApp::new("not4rts.minesweeper");

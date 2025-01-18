@@ -1,16 +1,22 @@
 use crate::components::button_cell::{ButtonCell, ButtonMsg, ButtonOutput};
+use crate::game::models::board::RevealResult;
+use crate::game::models::cell::CellPosition;
+use crate::game::models::game::GameDifficulty;
 use crate::game::state::GameState;
-use crate::models::cell::CellPosition;
-use crate::models::game::{GameDifficulty, GameStatus};
-use gtk::gdk;
 use gtk::gdk_pixbuf::Pixbuf;
 use gtk::glib::ControlFlow;
-use gtk::prelude::*;
+use gtk::{gdk, prelude::*};
 use relm4::actions::{RelmAction, RelmActionGroup};
 use relm4::prelude::FactoryVecDeque;
 use relm4::{ComponentParts, RelmWidgetExt, SimpleComponent};
+use std::rc::Rc;
 
 const APP_ICON: &[u8] = include_bytes!("../logo.png");
+const SQUARE_BUTTON_CLASS: &str = "square-button";
+const REVEALED_CELL_CLASS: &str = "revealed-cell";
+const LOST_CELL_CLASS: &str = "lost-cell";
+const CELL_SIZE: i32 = 20;
+const EMPTY_STRING: String = String::new();
 
 relm4::new_action_group!(WindowActionGroup, "win");
 relm4::new_stateless_action!(
@@ -64,14 +70,13 @@ impl SimpleComponent for App {
             gtk::Box {
                 set_css_classes: &["main-box"],
                 set_orientation: gtk::Orientation::Vertical,
-                    gtk::Box {
-                        set_orientation: gtk::Orientation::Horizontal,
 
-                        gtk::PopoverMenuBar::from_model(Some(&main_menu)) {
-                            set_css_classes: &["menu-bar"],
+                gtk::Box {
+                    set_orientation: gtk::Orientation::Horizontal,
+                    gtk::PopoverMenuBar::from_model(Some(&main_menu)) {
+                        set_css_classes: &["menu-bar"],
                     }
                 },
-
 
                 gtk::Box {
                     set_orientation: gtk::Orientation::Vertical,
@@ -99,15 +104,13 @@ impl SimpleComponent for App {
                         gtk::Button {
                             set_hexpand: true,
                             set_halign: gtk::Align::Center,
-                            set_size_request: (50,50),
+                            set_size_request: (50, 50),
                             add_css_class: "restart_button",
                             #[watch]
-                            set_label: match model.game_state.status() {
-                                GameStatus::Won => "😎",
-                                GameStatus::Lost => "👺",
-                                GameStatus::InProgress => "🙂",
+                            set_label: &model.game_state.status().to_string(),
+                            connect_clicked[sender] => move |_| {
+                                sender.input(Msg::Restart);
                             },
-                            connect_clicked => Msg::Restart,
                         },
 
                         #[name(time_remaining_label)]
@@ -127,7 +130,8 @@ impl SimpleComponent for App {
                             set_row_homogeneous: true,
                             set_column_homogeneous: true,
                             #[watch]
-                            set_size_request: (20*i32::try_from(model.game_state.difficulty().board_size).expect("This conversion should always succeed. (C03)"), 20*i32::try_from(model.game_state.difficulty().board_size).expect("This conversion should always succeed. (C03)")),
+                            set_size_request: (CELL_SIZE * i32::try_from(model.game_state.difficulty().board_size).unwrap_or(1),
+                                             CELL_SIZE * i32::try_from(model.game_state.difficulty().board_size).unwrap_or(1)),
                         }
                     }
                 }
@@ -157,17 +161,17 @@ impl SimpleComponent for App {
         root: Self::Root,
         sender: relm4::ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let cells =
-            FactoryVecDeque::builder()
-                .launch_default()
-                .forward(sender.input_sender(), |msg| match msg {
-                    ButtonOutput::Reveal(index) => Msg::Reveal(index),
-                    ButtonOutput::Flag(index) => Msg::Flag(index),
-                });
+        let game_state = GameState::new(difficulty).expect("Failed to create game state");
 
-        let model = Self::new(GameState::new(difficulty).unwrap(), cells);
+        let cells: FactoryVecDeque<ButtonCell> = FactoryVecDeque::builder()
+            .launch_default()
+            .forward(sender.input_sender(), |msg| match msg {
+                ButtonOutput::Reveal(index) => Msg::Reveal(index),
+                ButtonOutput::Flag(index) => Msg::Flag(index),
+            });
 
-        // Set up timer to update every second
+        let model = Self::new(game_state, cells);
+
         let sender_clone = sender.clone();
         gtk::glib::timeout_add_seconds_local(1, move || {
             sender_clone.input(Msg::Tick);
@@ -177,138 +181,19 @@ impl SimpleComponent for App {
         let cells_grid = model.cells.widget();
         let widgets = view_output!();
 
-        let mut group = RelmActionGroup::<WindowActionGroup>::new();
-        // MenuBar
-        let sender_clone = sender.clone();
-        let action_set_beginner: RelmAction<SetDifficultyBeginnerAction> = {
-            RelmAction::new_stateless(move |_| {
-                sender_clone.input(Msg::ChangeDifficulty(GameDifficulty::BEGINNER));
-            })
-        };
-        group.add_action(action_set_beginner);
-
-        let sender_clone = sender.clone();
-        let action_set_intermediate: RelmAction<SetDifficultyIntermediateAction> = {
-            RelmAction::new_stateless(move |_| {
-                sender_clone.input(Msg::ChangeDifficulty(GameDifficulty::INTERMEDIATE));
-            })
-        };
-        group.add_action(action_set_intermediate);
-
-        let sender_clone = sender.clone();
-        let action_set_expert: RelmAction<SetDifficultyExpertAction> = {
-            RelmAction::new_stateless(move |_| {
-                sender_clone.input(Msg::ChangeDifficulty(GameDifficulty::EXPERT));
-            })
-        };
-        group.add_action(action_set_expert);
-
-        let sender_clone = sender.clone();
-        let action_set_custom: RelmAction<SetDifficultyCustomAction> = {
-            RelmAction::new_stateless(move |_| {
-                sender_clone.input(Msg::ChangeDifficulty(GameDifficulty::CUSTOM));
-            })
-        };
-        group.add_action(action_set_custom);
-        let sender_clone = sender;
-        let action_open_about: RelmAction<AboutAction> = {
-            RelmAction::new_stateless(move |_| {
-                sender_clone.input(Msg::ShowAbout);
-            })
-        };
-        group.add_action(action_open_about);
-
-        group.register_for_widget(&widgets.main_window);
+        Self::setup_actions(sender, &widgets.main_window);
 
         ComponentParts { model, widgets }
     }
 
     fn update(&mut self, message: Self::Input, _sender: relm4::ComponentSender<Self>) {
         match message {
-            Msg::Restart => {
-                println!("Restart!");
-                self.game_state
-                    .restart()
-                    .expect("Failed to restart game. Bad difficulty?");
-                self.cells.broadcast(ButtonMsg::Display(String::new()));
-                self.cells
-                    .broadcast(ButtonMsg::SetCssClasses(vec!["square-button".to_string()]));
-            }
-            Msg::Reveal(index) => {
-                let cell_pos =
-                    CellPosition::from_index(index, self.game_state.difficulty().board_size);
-                println!(
-                    "App::Reveal! index: {}, x:{}, y:{}, display:{}",
-                    index,
-                    cell_pos.x,
-                    cell_pos.y,
-                    self.game_state
-                        .display_cell(cell_pos)
-                        .expect("Failed to display cell, position is invalid")
-                );
-                self.reveal(cell_pos);
-            }
-            Msg::Flag(index) => {
-                let cell_pos =
-                    CellPosition::from_index(index, self.game_state.difficulty().board_size);
-                println!(
-                    "App::Flag: x:{}, y:{}, display:{}",
-                    cell_pos.x,
-                    cell_pos.y,
-                    self.game_state
-                        .display_cell(cell_pos)
-                        .expect("Failed to display cell, position is invalid")
-                );
-
-                self.game_state
-                    .toggle_flag(cell_pos)
-                    .expect("Failed to reveal cell. Bad position.");
-
-                self.cells.send(
-                    index,
-                    ButtonMsg::Display(
-                        self.game_state
-                            .display_cell(cell_pos)
-                            .expect("Failed to display cell"),
-                    ),
-                );
-            }
-            Msg::Tick => {
-                self.game_state.tick();
-            }
-            Msg::ChangeDifficulty(difficulty) => {
-                println!("Change difficulty to {difficulty:?}!");
-                self.game_state.change_difficulty(difficulty);
-                if self.cells.len() == (difficulty.board_size * difficulty.board_size) {
-                    self.cells.broadcast(ButtonMsg::Display(String::new()));
-                    self.cells
-                        .broadcast(ButtonMsg::SetCssClasses(vec!["square-button".to_string()]));
-                } else {
-                    let mut cells_guard = self.cells.guard();
-                    cells_guard.clear();
-                    while cells_guard.len() < (difficulty.board_size * difficulty.board_size) {
-                        cells_guard.push_front(ButtonCell::new(
-                            difficulty.board_size,
-                            vec!["square-button".to_string()],
-                        ));
-                    }
-                    cells_guard.drop();
-                }
-            }
-            Msg::ShowAbout => {
-                println!("ShowAbout!");
-                let dialog = gtk::AboutDialog::builder()
-                    .program_name("Rusty Minesweeper")
-                    .version("1.0")
-                    .authors(vec!["not4rt".to_string()])
-                    .comments("A Minesweeper clone written in Rust using GTK4 and Relm4")
-                    .build();
-                if let Ok(pixbuf) = Pixbuf::from_read(APP_ICON) {
-                    let texture = gdk::Texture::for_pixbuf(&pixbuf);
-                    dialog.set_logo(Some(&texture));
-                }
-                dialog.present();
-            }
+            Msg::Restart => self.handle_restart(),
+            Msg::Reveal(index) => self.handle_reveal(index),
+            Msg::Flag(index) => self.handle_flag(index),
+            Msg::Tick => self.game_state.tick(),
+            Msg::ChangeDifficulty(difficulty) => self.handle_difficulty_change(difficulty),
+            Msg::ShowAbout => Self::show_about_dialog(),
         }
     }
 }
@@ -316,57 +201,140 @@ impl SimpleComponent for App {
 impl App {
     fn new(game_state: GameState, mut cells: FactoryVecDeque<ButtonCell>) -> Self {
         let board_size = game_state.difficulty().board_size;
+
         let mut cells_guard = cells.guard();
+
         while cells_guard.len() < (board_size * board_size) {
             cells_guard.push_back(ButtonCell::new(
                 board_size,
-                vec!["square-button".to_string()],
+                vec![SQUARE_BUTTON_CLASS.to_string()],
             ));
         }
-        cells_guard.drop();
+        drop(cells_guard);
 
         Self { game_state, cells }
     }
 
-    fn reveal(&mut self, cell_pos: CellPosition) {
-        if self.game_state.status() == &GameStatus::Lost {
-            println!("You Lose!");
-            return;
-        }
-
+    fn handle_restart(&mut self) {
         self.game_state
-            .reveal_cell(cell_pos)
-            .expect("Failed to reveal cell. Bad position.");
+            .restart()
+            .expect("Failed to restart game. Bad difficulty?");
 
-        for revealed_pos in self.game_state.revealed_cells() {
-            let index = revealed_pos.to_index(self.game_state.difficulty().board_size);
-            self.cells.send(
-                index,
-                ButtonMsg::Display(
-                    self.game_state
-                        .display_cell(*revealed_pos)
-                        .expect("Failed to display cell"),
-                ),
-            );
+        self.cells.broadcast(ButtonMsg::Display(EMPTY_STRING));
+        self.cells.broadcast(ButtonMsg::SetCssClasses(vec![
+            SQUARE_BUTTON_CLASS.to_string()
+        ]));
+    }
 
-            self.cells.send(
-                index,
-                ButtonMsg::AddCssClasses(vec!["revealed-cell".to_string()]),
-            );
-        }
-        self.game_state.clear_revealed_cells();
+    fn handle_reveal(&mut self, index: usize) {
+        let board_size = self.game_state.difficulty().board_size;
+        let cell_pos = CellPosition::from_index(index, board_size);
 
-        if self.game_state.status() == &GameStatus::Lost {
-            let index = cell_pos.to_index(self.game_state.difficulty().board_size);
-            self.cells.send(
-                index,
-                ButtonMsg::AddCssClasses(vec!["lost-cell".to_string()]),
-            );
-        } else if self.game_state.status() == &GameStatus::Won {
-            for flagged_pos in self.game_state.flagged_cells() {
-                let index = flagged_pos.to_index(self.game_state.difficulty().board_size);
-                self.cells.send(index, ButtonMsg::Display("🚩".to_string()));
+        match self.game_state.reveal_cell(cell_pos) {
+            Ok(RevealResult::CantReveal) | Err(_) => (),
+            Ok(reveal_result) => {
+                for &revealed_pos in self.game_state.revealed_cells() {
+                    let revealed_index = revealed_pos.to_index(board_size);
+                    if let Ok(display) = self.game_state.display_cell(revealed_pos) {
+                        self.cells.send(revealed_index, ButtonMsg::Display(display));
+                        self.cells.send(
+                            revealed_index,
+                            ButtonMsg::AddCssClasses(vec![REVEALED_CELL_CLASS.to_string()]),
+                        );
+                    }
+                }
+                self.game_state.clear_revealed_cells();
+
+                if reveal_result == RevealResult::GameOver {
+                    self.cells.send(
+                        index,
+                        ButtonMsg::AddCssClasses(vec![LOST_CELL_CLASS.to_string()]),
+                    );
+                } else if self.game_state.status().is_won() {
+                    for flagged_pos in self.game_state.flagged_cells() {
+                        let flag_index = flagged_pos.to_index(board_size);
+                        self.cells
+                            .send(flag_index, ButtonMsg::Display("🚩".to_string()));
+                    }
+                }
             }
         }
+    }
+
+    fn handle_flag(&mut self, index: usize) {
+        let cell_pos = CellPosition::from_index(index, self.game_state.difficulty().board_size);
+        if matches!(self.game_state.toggle_flag(cell_pos), Ok(true)) {
+            if let Ok(display) = self.game_state.display_cell(cell_pos) {
+                self.cells.send(index, ButtonMsg::Display(display));
+            }
+        }
+    }
+
+    fn handle_difficulty_change(&mut self, difficulty: GameDifficulty) {
+        self.game_state.change_difficulty(difficulty);
+
+        let new_size = difficulty.board_size * difficulty.board_size;
+        if self.cells.len() == new_size {
+            self.cells.broadcast(ButtonMsg::Display(EMPTY_STRING));
+            self.cells.broadcast(ButtonMsg::SetCssClasses(vec![
+                SQUARE_BUTTON_CLASS.to_string()
+            ]));
+        } else {
+            let mut cells_guard = self.cells.guard();
+            cells_guard.clear();
+
+            while cells_guard.len() < new_size {
+                cells_guard.push_back(ButtonCell::new(
+                    difficulty.board_size,
+                    vec![SQUARE_BUTTON_CLASS.to_string()],
+                ));
+            }
+        }
+    }
+
+    fn show_about_dialog() {
+        let dialog = gtk::AboutDialog::builder()
+            .program_name("Rusty Minesweeper")
+            .version("2.0")
+            .authors(vec!["not4rt".to_string()])
+            .comments("A Minesweeper clone written in Rust using GTK4 and Relm4")
+            .build();
+
+        if let Ok(pixbuf) = Pixbuf::from_read(APP_ICON) {
+            let texture = gdk::Texture::for_pixbuf(&pixbuf);
+            dialog.set_logo(Some(&texture));
+        }
+
+        dialog.present();
+    }
+
+    fn setup_actions(sender: relm4::ComponentSender<Self>, window: &gtk::Window) {
+        let mut group = RelmActionGroup::<WindowActionGroup>::new();
+
+        let sender = Rc::new(sender);
+
+        macro_rules! add_difficulty_action {
+            ($action:ty, $difficulty:expr) => {
+                let sender = sender.clone();
+                group.add_action(RelmAction::<$action>::new_stateless(move |_| {
+                    sender.input(Msg::ChangeDifficulty($difficulty));
+                }));
+            };
+        }
+
+        add_difficulty_action!(SetDifficultyBeginnerAction, GameDifficulty::BEGINNER);
+        add_difficulty_action!(
+            SetDifficultyIntermediateAction,
+            GameDifficulty::INTERMEDIATE
+        );
+        add_difficulty_action!(SetDifficultyExpertAction, GameDifficulty::EXPERT);
+        add_difficulty_action!(SetDifficultyCustomAction, GameDifficulty::CUSTOM);
+
+        let sender = sender;
+        group.add_action(RelmAction::<AboutAction>::new_stateless(move |_| {
+            sender.input(Msg::ShowAbout);
+        }));
+
+        group.register_for_widget(window);
     }
 }

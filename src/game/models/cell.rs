@@ -93,6 +93,12 @@ impl CellPosition {
     }
 }
 
+impl From<(usize, usize)> for CellPosition {
+    fn from((x, y): (usize, usize)) -> Self {
+        Self { x, y }
+    }
+}
+
 #[derive(Debug, Clone, Copy, Hash)]
 pub enum CellState {
     Hidden,
