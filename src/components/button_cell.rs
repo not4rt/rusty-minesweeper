@@ -1,9 +1,11 @@
-use gtk::prelude::{ButtonExt, GestureExt, GestureSingleExt, WidgetExt};
+use gtk::prelude::{GestureExt, GestureSingleExt, WidgetExt};
 use relm4::{
     factory::positions::GridPosition,
     prelude::{DynamicIndex, FactoryComponent},
     FactorySender, RelmWidgetExt,
 };
+
+const CELL_SIZE: i32 = 20;
 
 #[derive(Debug, Default)]
 pub struct ButtonCell {
@@ -64,12 +66,12 @@ impl FactoryComponent for ButtonCell {
 
     view! {
         #[root]
-        gtk::Button {
+        gtk::Label {
             set_can_focus: false,
             set_hexpand: true,
             set_vexpand: true,
-            set_width_request: 20,
-            set_height_request: 20,
+            set_width_request: CELL_SIZE,
+            set_height_request: CELL_SIZE,
             #[watch]
             set_css_classes: &self.css_classes.iter().map(std::string::String::as_str).collect::<Vec<&str>>(),
             #[watch]
@@ -91,13 +93,17 @@ impl FactoryComponent for ButtonCell {
 
             #[watch]
             set_label: &self.label,
-            connect_clicked[sender, index] => move |_|{
-                sender.output(ButtonOutput::Reveal(index.current_index())).unwrap();
-            },
             add_controller = gtk::GestureClick {
                 set_button: gtk::gdk::ffi::GDK_BUTTON_SECONDARY as u32,
-                connect_pressed[sender, index] => move |gesture, _, _, _|{
+                set_state: gtk::EventSequenceState::Denied,
+                connect_begin[sender, index] => move |_, _|{
                     sender.output(ButtonOutput::Flag(index.current_index())).unwrap();
+                },
+            },
+            add_controller = gtk::GestureClick {
+                set_button: gtk::gdk::ffi::GDK_BUTTON_PRIMARY as u32,
+                connect_released[sender, index] => move |gesture, _, _, _|{
+                    sender.output(ButtonOutput::Reveal(index.current_index())).unwrap();
                     gesture.set_state(gtk::EventSequenceState::Claimed);
                 },
             },

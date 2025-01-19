@@ -10,12 +10,12 @@ use relm4::actions::{RelmAction, RelmActionGroup};
 use relm4::prelude::FactoryVecDeque;
 use relm4::{ComponentParts, RelmWidgetExt, SimpleComponent};
 use std::rc::Rc;
+use std::time::Duration;
 
 const APP_ICON: &[u8] = include_bytes!("../logo.png");
 const SQUARE_BUTTON_CLASS: &str = "square-button";
 const REVEALED_CELL_CLASS: &str = "revealed-cell";
 const LOST_CELL_CLASS: &str = "lost-cell";
-const CELL_SIZE: i32 = 20;
 const EMPTY_STRING: String = String::new();
 
 relm4::new_action_group!(WindowActionGroup, "win");
@@ -104,7 +104,7 @@ impl SimpleComponent for App {
                         gtk::Button {
                             set_hexpand: true,
                             set_halign: gtk::Align::Center,
-                            set_size_request: (50, 50),
+                            set_size_request: (30, 30),
                             add_css_class: "restart_button",
                             #[watch]
                             set_label: &model.game_state.status().to_string(),
@@ -129,9 +129,6 @@ impl SimpleComponent for App {
                         cells_grid -> gtk::Grid {
                             set_row_homogeneous: true,
                             set_column_homogeneous: true,
-                            #[watch]
-                            set_size_request: (CELL_SIZE * i32::try_from(model.game_state.difficulty().board_size).unwrap_or(1),
-                                             CELL_SIZE * i32::try_from(model.game_state.difficulty().board_size).unwrap_or(1)),
                         }
                     }
                 }
@@ -170,17 +167,23 @@ impl SimpleComponent for App {
                 ButtonOutput::Flag(index) => Msg::Flag(index),
             });
 
-        let model = Self::new(game_state, cells);
+        // let sender_clone = sender.clone();
+        // gtk::glib::timeout_add_seconds_local(1, move || {
+        //     sender_clone.input(Msg::Tick);
+        //     ControlFlow::Continue
+        // });
 
+        // test fast tick to decrease the lag on difficulty change
         let sender_clone = sender.clone();
-        gtk::glib::timeout_add_seconds_local(1, move || {
+        gtk::glib::timeout_add_local(Duration::from_millis(4), move || {
             sender_clone.input(Msg::Tick);
             ControlFlow::Continue
         });
 
+        let model = Self::new(game_state, cells);
+
         let cells_grid = model.cells.widget();
         let widgets = view_output!();
-
         Self::setup_actions(sender, &widgets.main_window);
 
         ComponentParts { model, widgets }

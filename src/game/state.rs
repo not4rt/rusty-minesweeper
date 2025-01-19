@@ -14,6 +14,7 @@ pub struct GameState {
     elapsed_seconds: u64,
     revealed_cells: HashSet<CellPosition>,
     flagged_cells: HashSet<CellPosition>,
+    custom_flags_remaining: usize,
 }
 
 impl GameState {
@@ -31,6 +32,7 @@ impl GameState {
             elapsed_seconds: 0,
             revealed_cells: HashSet::with_capacity(difficulty.board_size.pow(2)),
             flagged_cells: HashSet::with_capacity(difficulty.mines_count),
+            custom_flags_remaining: 0,
         })
     }
 
@@ -136,6 +138,7 @@ impl GameState {
         self.status = GameStatus::InProgress;
         self.elapsed_seconds = 0;
         self.start_time = Instant::now();
+        self.custom_flags_remaining = 0;
         self.revealed_cells.clear();
         self.flagged_cells.clear();
 
@@ -144,9 +147,13 @@ impl GameState {
 
     #[must_use]
     pub const fn flags_remaining(&self) -> usize {
-        self.difficulty
-            .mines_count
-            .saturating_sub(self.board.flagged_count())
+        if self.elapsed_seconds == 0 {
+            self.custom_flags_remaining
+        } else {
+            self.difficulty
+                .mines_count
+                .saturating_sub(self.board.flagged_count())
+        }
     }
 
     #[must_use]
@@ -167,6 +174,10 @@ impl GameState {
     pub fn tick(&mut self) {
         if !self.status.is_over() {
             self.elapsed_seconds = self.start_time.elapsed().as_secs();
+
+            if self.custom_flags_remaining < self.difficulty.mines_count {
+                self.custom_flags_remaining = self.custom_flags_remaining.saturating_add(1);
+            }
         }
     }
 

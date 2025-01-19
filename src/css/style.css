@@ -2,30 +2,26 @@
 :root {
     --primary-color: #515558;
     --secondary-color: white;
-    --accent-color: #FF0000;
+    --accent-color: #970000;
+    --border-size: 3px;
 }
 
 button.restart_button {
-    font-size: xx-large;
+    font-size: 150%;
     border-radius: 0;
-    border-top: 3px solid var(--secondary-color);
-    border-left: 3px solid var(--secondary-color);
-    border-right: 3px solid var(--primary-color);
-    border-bottom: 3px solid var(--primary-color);
+    border-top: var(--border-size) solid var(--secondary-color);
+    border-left: var(--border-size) solid var(--secondary-color);
+    border-right: 4px solid var(--primary-color);
+    border-bottom: 4px solid var(--primary-color);
     background-color: #949494;
     background-image: none;
 }
 
 button.restart_button:active {
-    border-top: 3px solid var(--primary-color);
-    border-left: 3px solid var(--primary-color);
+    border-top: var(--border-size) solid var(--primary-color);
+    border-left: var(--border-size) solid var(--primary-color);
     border-right: 1px solid var(--primary-color);
     border-bottom: 1px solid var(--primary-color);
-}
-
-button.activated_mine {
-    color: var(--accent-color);
-    accent-color: var(--accent-color);
 }
 
 label.mines_remaining_label,
@@ -37,16 +33,17 @@ label.time_remaining_label {
 }
 
 .square-button {
-    aspect-ratio: 1/1;
     min-width: 20px;
     min-height: 20px;
     border-radius: 0;
-    border-top: 3px solid var(--secondary-color);
-    border-left: 3px solid var(--secondary-color);
+    border-top: var(--border-size) solid var(--secondary-color);
+    border-left: var(--border-size) solid var(--secondary-color);
     border-right: 3px solid var(--primary-color);
     border-bottom: 3px solid var(--primary-color);
     background-color: #949494;
     background-image: none;
+    margin-top: -1px;
+    margin-left: -1px;
 }
 
 .square-button:active {
@@ -67,37 +64,34 @@ label.time_remaining_label {
 }
 
 .inner-box {
-    border-top: 3px solid var(--secondary-color);
-    border-left: 3px solid var(--secondary-color);
+    border-top: var(--border-size) solid var(--secondary-color);
+    border-left: var(--border-size) solid var(--secondary-color);
     background-color: #788088;
     padding: 10px;
 }
 
 .top-box {
-    border-top: 3px solid var(--primary-color);
-    border-left: 3px solid var(--primary-color);
-    border-right: 3px solid var(--secondary-color);
-    border-bottom: 3px solid var(--secondary-color);
+    border-top: var(--border-size) solid var(--primary-color);
+    border-left: var(--border-size) solid var(--primary-color);
+    border-right: var(--border-size) solid var(--secondary-color);
+    border-bottom: var(--border-size) solid var(--secondary-color);
     padding: 10px;
 }
 
 .bottom-box {
-    border-top: 3px solid var(--primary-color);
-    border-left: 3px solid var(--primary-color);
-    border-right: 3px solid var(--secondary-color);
-    border-bottom: 3px solid var(--secondary-color);
-    background-color: var(--primary-color);
+    border-top: 5px solid var(--primary-color);
+    border-left: 5px solid var(--primary-color);
+    border-right: 5px solid var(--secondary-color);
+    border-bottom: 5px solid var(--secondary-color);
 }
 
 .revealed-cell {
     font-weight: bolder;
-    border: none;
+    border: 1px solid var(--primary-color);
     background-color: #a7a8a8;
-    margin: 1px;
 }
 
 .lost-cell {
-    border: none;
     background-color: var(--accent-color);
 }
 
@@ -137,11 +131,10 @@ label.time_remaining_label {
 General Styles
  */
 
-button {
+button,
+label {
     transition: all 0.2s;
     transition-timing-function: ease-out;
-    padding-top: 4px;
-    padding-bottom: 4px;
 }
 
 box.horizontal {
