@@ -2,7 +2,7 @@ use crate::error::GameResult;
 use crate::game::models::board::{Board, RevealResult};
 use crate::game::models::cell::CellPosition;
 use crate::game::models::game::{GameDifficulty, GameStatus};
-use std::collections::HashSet;
+use std::collections::{HashSet, VecDeque};
 use std::time::Instant;
 
 #[derive(Debug, Clone)]
@@ -71,35 +71,45 @@ impl GameState {
         if reveal_result != RevealResult::GameOver {
             self.check_win_condition();
         }
+
         Ok(reveal_result)
     }
 
-    fn reveal_area(&mut self, pos: CellPosition) -> GameResult<RevealResult> {
-        match self.board.reveal(pos)? {
-            RevealResult::Continue => {
-                self.revealed_cells.insert(pos);
+    fn reveal_area(&mut self, start_pos: CellPosition) -> GameResult<RevealResult> {
+        let mut to_reveal: VecDeque<CellPosition> = VecDeque::with_capacity(8);
+        let mut visited: HashSet<CellPosition> = HashSet::with_capacity(32);
 
-                // If the cell is empty, reveal surrounding area
-                if self.board.cell(pos)?.is_empty() {
-                    let adjacent_positions: Vec<CellPosition> =
-                        self.board.adjacent_positions(pos).collect();
-                    for adj_pos in adjacent_positions {
-                        if !self.board.cell(adj_pos)?.is_revealed()
-                            && !self.board.cell(adj_pos)?.is_flagged()
-                        {
-                            self.reveal_area(adj_pos)?;
+        to_reveal.push_back(start_pos);
+        visited.insert(start_pos);
+
+        while let Some(pos) = to_reveal.pop_front() {
+            match self.board.reveal(pos)? {
+                RevealResult::Continue => {
+                    self.revealed_cells.insert(pos);
+
+                    if self.board.cell(pos)?.is_empty() {
+                        for adj_pos in self.board.adjacent_positions(pos) {
+                            if !visited.insert(adj_pos) {
+                                continue;
+                            }
+
+                            let cell = self.board.cell(adj_pos)?;
+                            if !cell.is_revealed() && !cell.is_flagged() {
+                                to_reveal.push_back(adj_pos);
+                            }
                         }
                     }
                 }
+                RevealResult::GameOver => {
+                    self.revealed_cells.insert(pos);
+                    self.status = GameStatus::Lost;
+                    self.board.reveal_mines();
+
+                    self.revealed_cells.extend(self.board.mine_positions());
+                    return Ok(RevealResult::GameOver);
+                }
+                RevealResult::CantReveal => return Ok(RevealResult::CantReveal),
             }
-            RevealResult::GameOver => {
-                self.revealed_cells.insert(pos);
-                self.status = GameStatus::Lost;
-                self.board.reveal_mines();
-                self.revealed_cells.extend(self.board.mine_positions());
-                return Ok(RevealResult::GameOver);
-            }
-            RevealResult::CantReveal => return Ok(RevealResult::CantReveal),
         }
 
         Ok(RevealResult::Continue)
