@@ -173,6 +173,9 @@ impl GameState {
     #[must_use]
     pub const fn elapsed_seconds(&self) -> u64 {
         self.elapsed_seconds
+        } else {
+            999
+        }
     }
 
     #[must_use]
