@@ -11,7 +11,6 @@ pub enum RevealResult {
     CantReveal,
 }
 
-#[derive(Debug, Clone)]
 pub struct Board {
     cells: Vec<Vec<Cell>>,
     size: usize,

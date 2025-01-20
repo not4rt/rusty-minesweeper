@@ -1,6 +1,6 @@
 use std::fmt;
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum CellContent {
     Mine,
     Empty,
@@ -72,7 +72,7 @@ impl Default for CellContent {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct CellPosition {
     pub x: usize,
     pub y: usize,
@@ -103,7 +103,7 @@ impl From<(usize, usize)> for CellPosition {
     }
 }
 
-#[derive(Debug, Clone, Copy, Hash)]
+#[derive(Clone, Copy)]
 pub enum CellState {
     Hidden,
     Revealed,
@@ -116,7 +116,7 @@ impl Default for CellState {
     }
 }
 
-#[derive(Debug, Default, Clone, Copy, Hash)]
+#[derive(Default, Clone, Copy)]
 pub struct Cell {
     pub content: CellContent,
     pub state: CellState,

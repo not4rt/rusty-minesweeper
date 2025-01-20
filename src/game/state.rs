@@ -5,7 +5,6 @@ use crate::game::models::game::{GameDifficulty, GameStatus};
 use std::collections::{HashSet, VecDeque};
 use std::time::Instant;
 
-#[derive(Debug, Clone)]
 pub struct GameState {
     board: Board,
     difficulty: GameDifficulty,

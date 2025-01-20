@@ -2,7 +2,7 @@
 :root {
     --primary-color: #515558;
     --secondary-color: white;
-    --accent-color: #970000;
+    --accent-color: #f30000;
     --border-size: 3px;
 }
 
@@ -13,6 +13,7 @@ button.restart_button {
     border-left: var(--border-size) solid var(--secondary-color);
     border-right: 4px solid var(--primary-color);
     border-bottom: 4px solid var(--primary-color);
+    margin: -4px;
     background-color: #949494;
     background-image: none;
 }
@@ -38,17 +39,12 @@ label.time_remaining_label {
     border-radius: 0;
     border-top: var(--border-size) solid var(--secondary-color);
     border-left: var(--border-size) solid var(--secondary-color);
-    border-right: 3px solid var(--primary-color);
-    border-bottom: 3px solid var(--primary-color);
+    border-right: 4px solid var(--primary-color);
+    border-bottom: 4px solid var(--primary-color);
     background-color: #949494;
     background-image: none;
     margin-top: -1px;
     margin-left: -1px;
-}
-
-.square-button:active {
-    border: none;
-    background-color: #a7a8a8;
 }
 
 .seven-segment {
@@ -85,9 +81,13 @@ label.time_remaining_label {
     border-bottom: 5px solid var(--secondary-color);
 }
 
+.active,
 .revealed-cell {
     font-weight: bolder;
-    border: 1px solid var(--primary-color);
+    border-top: 1px solid var(--primary-color);
+    border-left: 1px solid var(--primary-color);
+    border-right: none;
+    border-bottom: none;
     background-color: #a7a8a8;
 }
 
@@ -131,11 +131,11 @@ label.time_remaining_label {
 General Styles
  */
 
-button,
+/* button,
 label {
     transition: all 0.2s;
     transition-timing-function: ease-out;
-}
+} */
 
 box.horizontal {
     background-color: #eceacf;
