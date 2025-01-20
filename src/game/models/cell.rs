@@ -30,18 +30,18 @@ impl CellContent {
     }
 
     #[must_use]
-    pub const fn as_number(self) -> Option<u8> {
+    pub const fn as_number(self) -> u8 {
         match self {
-            Self::Mine => None,
-            Self::Empty => Some(0),
-            Self::One => Some(1),
-            Self::Two => Some(2),
-            Self::Three => Some(3),
-            Self::Four => Some(4),
-            Self::Five => Some(5),
-            Self::Six => Some(6),
-            Self::Seven => Some(7),
-            Self::Eight => Some(8),
+            Self::Mine => 99,
+            Self::Empty => 0,
+            Self::One => 1,
+            Self::Two => 2,
+            Self::Three => 3,
+            Self::Four => 4,
+            Self::Five => 5,
+            Self::Six => 6,
+            Self::Seven => 7,
+            Self::Eight => 8,
         }
     }
 }
@@ -51,7 +51,7 @@ impl fmt::Debug for CellContent {
         match self {
             Self::Mine => write!(f, "Mine"),
             Self::Empty => write!(f, "Blank"),
-            content => write!(f, "{}", content.as_number().unwrap()),
+            content => write!(f, "{}", content.as_number()),
         }
     }
 }
@@ -61,7 +61,7 @@ impl fmt::Display for CellContent {
         match self {
             Self::Mine => write!(f, "💣"),
             Self::Empty => write!(f, " "),
-            content => write!(f, "{}", content.as_number().unwrap()),
+            content => write!(f, "{}", content.as_number()),
         }
     }
 }
@@ -79,6 +79,10 @@ pub struct CellPosition {
 }
 
 impl CellPosition {
+    #[must_use]
+    pub const fn new(x: usize, y: usize) -> Self {
+        Self { x, y }
+    }
     #[must_use]
     pub const fn from_index(index: usize, board_size: usize) -> Self {
         Self {
