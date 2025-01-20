@@ -3,10 +3,9 @@
 ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg)
 ![GTK4](https://img.shields.io/badge/GTK-4.0-blue.svg)
 
-A reimplementation of the classic Windows XP Minesweeper, built with Rust and GTK4.
+A reimplementation of the classic Windows Minesweeper, built with Rust and Relm4/GTK4.
 
-![game-beginner2](https://github.com/user-attachments/assets/247ae9be-f5d3-4ce2-b363-e069d6c8ea2c)
-
+![game-beginner3](https://github.com/user-attachments/assets/34a434c2-81aa-4938-89a2-c2efdff9e308)
 
 ## ✨ Features
 
@@ -46,11 +45,3 @@ cargo run --release
 3. Clear all non-mine cells to win!
 4. Choose your difficulty level from the Game menu
 
-## Notes
-
-This project showcases some Rust concepts and patterns:
-
-- Custom component architecture using `relm4`
-- Board generation algorithm
-- Type-safe game state management
-- Reactive UI updates using GTK4's features
