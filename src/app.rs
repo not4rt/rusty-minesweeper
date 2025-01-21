@@ -18,6 +18,7 @@ const LOST_CELL_CLASS: &str = "lost-cell";
 const EMPTY_STRING: String = String::new();
 
 relm4::new_action_group!(WindowActionGroup, "win");
+relm4::new_stateless_action!(NewGameAction, WindowActionGroup, "new-game");
 relm4::new_stateless_action!(
     SetDifficultyBeginnerAction,
     WindowActionGroup,
@@ -38,6 +39,7 @@ relm4::new_stateless_action!(
     WindowActionGroup,
     "difficulty-custom"
 );
+relm4::new_stateless_action!(ExitAction, WindowActionGroup, "exit");
 relm4::new_stateless_action!(AboutAction, WindowActionGroup, "about");
 
 pub struct App {
@@ -58,6 +60,8 @@ pub enum Msg {
     LeftButtonPressed,
     LeftButtonReleased,
     RightButtonPressed,
+    MiddleButtonPressed,
+    MiddleButtonReleased,
 }
 
 #[relm4::component(pub)]
@@ -153,6 +157,15 @@ impl SimpleComponent for App {
                                     sender.input(Msg::RightButtonPressed);
                                 },
                             },
+                            add_controller = gtk::GestureClick {
+                                set_button: gtk::gdk::ffi::GDK_BUTTON_MIDDLE as u32,
+                                connect_pressed[sender] => move |_, _, _, _|{
+                                    sender.input(Msg::MiddleButtonPressed);
+                                },
+                                connect_released[sender] => move |_, _, _, _|{
+                                    sender.input(Msg::MiddleButtonReleased);
+                                },
+                            },
                         }
                     }
                 }
@@ -164,15 +177,21 @@ impl SimpleComponent for App {
         main_menu: {
             custom: "menubar",
             "Game" {
-                "Difficulty" {
+                section! {
+                    "New" => NewGameAction,
+                },
+                section! {
                     "Beginner" => SetDifficultyBeginnerAction,
                     "Intermediate" => SetDifficultyIntermediateAction,
                     "Expert" => SetDifficultyExpertAction,
-                    "Custom" => SetDifficultyCustomAction,
+                    "Custom..." => SetDifficultyCustomAction,
+                },
+                section! {
+                    "Exit" => ExitAction,
                 },
             },
             "Help" {
-                "About" => AboutAction
+                "About Rusty Minesweeper..." => AboutAction
             },
         }
     }
@@ -226,6 +245,8 @@ impl SimpleComponent for App {
             Msg::LeftButtonPressed => self.leftbutton_pressed(),
             Msg::LeftButtonReleased => self.leftbutton_released(),
             Msg::RightButtonPressed => self.rightbutton_pressed(),
+            Msg::MiddleButtonPressed => self.middlebutton_pressed(),
+            Msg::MiddleButtonReleased => self.middlebutton_released(),
         }
     }
 }
@@ -261,25 +282,31 @@ impl App {
         let board_size = self.game_state.difficulty().board_size;
         let cell_pos = CellPosition::from_index(index, board_size);
 
-        match self.game_state.reveal_cell(cell_pos) {
-            Ok(RevealResult::CantReveal) | Err(_) => (),
-            Ok(reveal_result) => {
-                for &revealed_pos in self.game_state.revealed_cells() {
-                    let revealed_index = revealed_pos.to_index(board_size);
-                    if let Ok(display) = self.game_state.display_cell(revealed_pos) {
-                        self.cells.send(revealed_index, ButtonMsg::Display(display));
-                        self.cells.send(
-                            revealed_index,
-                            ButtonMsg::AddCssClass(REVEALED_CELL_CLASS.to_string()),
-                        );
-                    }
-                }
-                self.game_state.clear_revealed_cells();
+        let reveal_result = self.game_state.reveal_cell(cell_pos);
 
-                if reveal_result == RevealResult::GameOver {
-                    self.cells
-                        .send(index, ButtonMsg::AddCssClass(LOST_CELL_CLASS.to_string()));
-                } else if self.game_state.status().is_won() {
+        if let Ok(reveal_result) = reveal_result {
+            self.reveal_cells(&reveal_result);
+        }
+    }
+
+    fn reveal_cells(&mut self, reveal_result: &RevealResult) {
+        let board_size = self.game_state.difficulty().board_size;
+
+        for &revealed_pos in self.game_state.revealed_cells() {
+            let revealed_index = revealed_pos.to_index(board_size);
+            if let Ok(display) = self.game_state.display_cell(revealed_pos) {
+                self.cells.send(revealed_index, ButtonMsg::Display(display));
+                self.cells.send(
+                    revealed_index,
+                    ButtonMsg::AddCssClass(REVEALED_CELL_CLASS.to_string()),
+                );
+            }
+        }
+        self.game_state.clear_revealed_cells();
+
+        match reveal_result {
+            RevealResult::Continue => {
+                if self.game_state.status().is_won() {
                     for flagged_pos in self.game_state.flagged_cells() {
                         let flag_index = flagged_pos.to_index(board_size);
                         self.cells
@@ -288,6 +315,11 @@ impl App {
                     self.game_state.clear_flagged_cells();
                 }
             }
+            RevealResult::GameOver(mine_pos) => self.cells.send(
+                mine_pos.to_index(board_size),
+                ButtonMsg::AddCssClass(LOST_CELL_CLASS.to_string()),
+            ),
+            RevealResult::CantReveal => (),
         }
     }
 
@@ -340,6 +372,7 @@ impl App {
 
         let sender = Rc::new(sender);
 
+        // Difficulty actions
         macro_rules! add_difficulty_action {
             ($action:ty, $difficulty:expr) => {
                 let sender = sender.clone();
@@ -357,7 +390,18 @@ impl App {
         add_difficulty_action!(SetDifficultyExpertAction, GameDifficulty::EXPERT);
         add_difficulty_action!(SetDifficultyCustomAction, GameDifficulty::CUSTOM);
 
-        let sender = sender;
+        // New game action
+        let sender_clone = sender.clone();
+        group.add_action(RelmAction::<NewGameAction>::new_stateless(move |_| {
+            sender_clone.input(Msg::Restart);
+        }));
+
+        // Exit action
+        let window_clone = window.clone();
+        group.add_action(RelmAction::<ExitAction>::new_stateless(move |_| {
+            gtk::Window::close(&window_clone);
+        }));
+
         group.add_action(RelmAction::<AboutAction>::new_stateless(move |_| {
             sender.input(Msg::ShowAbout);
         }));
@@ -380,8 +424,7 @@ impl App {
             || y > f64::from(self.cells.widget().height())
         {
             if let Some(old_cell_pos) = self.mouse_tracker.mouse_cell.take() {
-                let old_index = old_cell_pos.to_index(board_size);
-                self.cells.send(old_index, ButtonMsg::Deactivate);
+                self.deactivate_cell(old_cell_pos, &MouseButton::Middle);
             }
             return;
         }
@@ -407,8 +450,7 @@ impl App {
 
         // Deactivate old cell if it exists
         if let Some(old_cell_pos) = self.mouse_tracker.mouse_cell.take() {
-            let old_index = old_cell_pos.to_index(board_size);
-            self.cells.send(old_index, ButtonMsg::Deactivate);
+            self.deactivate_cell(old_cell_pos, &MouseButton::Middle);
         }
 
         // Store the new cell position
@@ -416,65 +458,130 @@ impl App {
         // println!("Mouse cell: {:?}", self.mouse_tracker.mouse_cell);
 
         // Activate cell if mouse is pressed and cell isn't flagged
-        if self.mouse_tracker.state == MouseState::Pressed {
-            if let Ok(cell_content) = self.game_state.display_cell(cell_pos) {
-                if cell_content != "🚩" {
-                    let index = cell_pos.to_index(board_size);
-                    self.cells.send(index, ButtonMsg::Activate);
-                }
-            }
+        if self.mouse_tracker.is_pressed() {
+            self.activate_cell(cell_pos);
         }
     }
 
     #[inline]
     fn leftbutton_pressed(&mut self) {
-        self.mouse_tracker.state = MouseState::Pressed;
+        self.mouse_tracker.lbutton_state = MouseState::Pressed;
 
         if let Some(cell_pos) = self.mouse_tracker.mouse_cell {
-            if let Ok(cell_content) = self.game_state.display_cell(cell_pos) {
-                if cell_content != "🚩" {
-                    let index = cell_pos.to_index(self.game_state.difficulty().board_size);
-                    self.cells.send(index, ButtonMsg::Activate);
-                }
-            }
+            self.activate_cell(cell_pos);
         }
     }
 
     #[inline]
     fn leftbutton_released(&mut self) {
-        self.mouse_tracker.state = MouseState::Released;
+        self.mouse_tracker.lbutton_state = MouseState::Released;
+        self.mouse_tracker.mbutton_state = MouseState::Released;
 
         if let Some(cell_pos) = self.mouse_tracker.mouse_cell {
+            self.deactivate_cell(cell_pos, &MouseButton::Middle);
             let index = cell_pos.to_index(self.game_state.difficulty().board_size);
             self.handle_reveal(index);
-            self.cells.send(index, ButtonMsg::Deactivate);
         }
     }
 
     #[inline]
     fn rightbutton_pressed(&mut self) {
         if let Some(cell_pos) = self.mouse_tracker.mouse_cell.take() {
+            self.deactivate_cell(cell_pos, &MouseButton::Middle);
             let index = cell_pos.to_index(self.game_state.difficulty().board_size);
-            self.cells.send(index, ButtonMsg::Deactivate);
             self.handle_flag(index);
         }
 
         // GTK4: Handle the strange behavior of the left button not being released when right button is pressed
-        self.leftbutton_released();
+        self.mouse_tracker.lbutton_state = MouseState::Released;
+        self.mouse_tracker.mbutton_state = MouseState::Released;
+    }
+
+    fn middlebutton_pressed(&mut self) {
+        self.mouse_tracker.mbutton_state = MouseState::Pressed;
+
+        if let Some(cell_pos) = self.mouse_tracker.mouse_cell {
+            self.activate_cell(cell_pos);
+        }
+    }
+
+    fn middlebutton_released(&mut self) {
+        self.mouse_tracker.mbutton_state = MouseState::Released;
+        self.mouse_tracker.lbutton_state = MouseState::Released;
+
+        if let Some(cell_pos) = self.mouse_tracker.mouse_cell.take() {
+            self.deactivate_cell(cell_pos, &MouseButton::Middle);
+
+            if let Ok(chord_cells) = self.game_state.chording(cell_pos) {
+                self.reveal_cells(&chord_cells);
+            }
+        }
+    }
+
+    #[inline]
+    fn activate_cell(&self, cell_pos: CellPosition) {
+        let board_size = self.game_state.difficulty().board_size;
+
+        if let Ok(cell_content) = self.game_state.display_cell(cell_pos) {
+            if cell_content == "🚩" {
+                return;
+            }
+        }
+
+        let index = cell_pos.to_index(board_size);
+        self.cells.send(index, ButtonMsg::Activate);
+
+        if self.mouse_tracker.mbutton_state == MouseState::Pressed {
+            self.activate_adjacent_cells(cell_pos);
+        }
+    }
+
+    #[inline]
+    fn activate_adjacent_cells(&self, cell_pos: CellPosition) {
+        for adj_pos in self.game_state.adjacent_positions(cell_pos) {
+            if let Ok(cell_content) = self.game_state.display_cell(adj_pos) {
+                if cell_content != "🚩" {
+                    let adj_index = adj_pos.to_index(self.game_state.difficulty().board_size);
+                    self.cells.send(adj_index, ButtonMsg::Activate);
+                }
+            }
+        }
+    }
+
+    #[inline]
+    fn deactivate_cell(&self, cell_pos: CellPosition, button: &MouseButton) {
+        let index = cell_pos.to_index(self.game_state.difficulty().board_size);
+        self.cells.send(index, ButtonMsg::Deactivate);
+
+        if matches!(button, MouseButton::Middle) {
+            for adj_pos in self.game_state.adjacent_positions(cell_pos) {
+                let adj_index = adj_pos.to_index(self.game_state.difficulty().board_size);
+                self.cells.send(adj_index, ButtonMsg::Deactivate);
+            }
+        }
     }
 }
 
 struct MouseTracker {
     mouse_cell: Option<CellPosition>,
-    state: MouseState,
+    lbutton_state: MouseState,
+    mbutton_state: MouseState,
 }
 
 impl MouseTracker {
     const fn new() -> Self {
         Self {
             mouse_cell: None,
-            state: MouseState::Released,
+            lbutton_state: MouseState::Released,
+            mbutton_state: MouseState::Released,
         }
+    }
+
+    #[must_use]
+    #[inline]
+    const fn is_pressed(&self) -> bool {
+        (matches!(self.mbutton_state, MouseState::Pressed)
+            || matches!(self.lbutton_state, MouseState::Pressed))
     }
 }
 
@@ -482,4 +589,10 @@ impl MouseTracker {
 enum MouseState {
     Pressed,
     Released,
+}
+
+enum MouseButton {
+    // Left,
+    Middle,
+    // Right,
 }

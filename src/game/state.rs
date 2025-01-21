@@ -35,9 +35,10 @@ impl GameState {
         })
     }
 
-    pub fn check_win_condition(&mut self) -> bool {
+    fn check_win_condition(&mut self) -> bool {
         if self.board.revealed_count()
             == (self.difficulty.board_size.pow(2) - self.difficulty.mines_count)
+            && !self.status.is_lost()
         {
             self.status = GameStatus::Won;
             self.board.flag_mines();
@@ -58,20 +59,22 @@ impl GameState {
     /// # Errors
     /// Will return `GameError` if the position is invalid.
     pub fn reveal_cell(&mut self, pos: CellPosition) -> GameResult<RevealResult> {
-        if self.status.is_over()
-            || self.board.cell(pos)?.is_revealed()
-            || self.board.cell(pos)?.is_flagged()
-        {
+        if self.board.cell(pos)?.is_revealed() || self.board.cell(pos)?.is_flagged() {
             return Ok(RevealResult::CantReveal);
         }
 
         let reveal_result = self.reveal_area(pos)?;
 
-        if reveal_result != RevealResult::GameOver {
-            self.check_win_condition();
+        match reveal_result {
+            RevealResult::Continue => {
+                if !self.status.is_lost() {
+                    self.check_win_condition();
+                }
+                Ok(RevealResult::Continue)
+            }
+            RevealResult::GameOver(mine_pos) => Ok(RevealResult::GameOver(mine_pos)),
+            RevealResult::CantReveal => Ok(RevealResult::CantReveal),
         }
-
-        Ok(reveal_result)
     }
 
     fn reveal_area(&mut self, start_pos: CellPosition) -> GameResult<RevealResult> {
@@ -99,13 +102,13 @@ impl GameState {
                         }
                     }
                 }
-                RevealResult::GameOver => {
+                RevealResult::GameOver(mine_pos) => {
                     self.revealed_cells.insert(pos);
                     self.status = GameStatus::Lost;
                     self.board.reveal_mines();
 
                     self.revealed_cells.extend(self.board.mine_positions());
-                    return Ok(RevealResult::GameOver);
+                    return Ok(RevealResult::GameOver(mine_pos));
                 }
                 RevealResult::CantReveal => return Ok(RevealResult::CantReveal),
             }
@@ -172,7 +175,8 @@ impl GameState {
 
     #[must_use]
     pub const fn elapsed_seconds(&self) -> u64 {
-        self.elapsed_seconds
+        if self.elapsed_seconds < 999 {
+            self.elapsed_seconds
         } else {
             999
         }
@@ -215,6 +219,7 @@ impl GameState {
     ///
     /// # Errors
     /// Will return `GameError` if the position is invalid
+    #[inline]
     pub fn display_cell(&self, pos: CellPosition) -> GameResult<String> {
         Ok(self.board.cell(pos)?.to_string())
     }
@@ -235,5 +240,60 @@ impl GameState {
 
     pub fn clear_flagged_cells(&mut self) {
         self.flagged_cells.clear();
+    }
+
+    pub fn adjacent_positions(&self, pos: CellPosition) -> impl Iterator<Item = CellPosition> + '_ {
+        self.board.adjacent_positions(pos)
+    }
+
+    /// Attempts to reveal all adjacent cells to the given position.
+    ///
+    /// # Errors
+    /// Will return `GameError` if the game is already over.
+    pub fn chording(&mut self, pos: CellPosition) -> GameResult<RevealResult> {
+        if self.status.is_over()
+            || self.board.cell(pos)?.is_empty()
+            || self.board.cell(pos)?.is_hidden()
+        {
+            return Ok(RevealResult::CantReveal);
+        }
+
+        let mut flagged_adjacent = 0;
+        let mut hidden: Vec<CellPosition> = Vec::with_capacity(8);
+
+        for adj_pos in self.board.adjacent_positions(pos) {
+            if self.board.cell(adj_pos)?.is_flagged() {
+                flagged_adjacent += 1;
+            } else if self.board.cell(adj_pos)?.is_hidden() {
+                hidden.push(adj_pos);
+            }
+        }
+
+        if flagged_adjacent != self.board.cell(pos)?.content.as_number() {
+            return Ok(RevealResult::CantReveal);
+        }
+
+        let mut game_over = false;
+        let mut end_cell = CellPosition::new(0, 0);
+        let mut revealed = false;
+
+        for adj_pos in hidden {
+            match self.reveal_cell(adj_pos)? {
+                RevealResult::GameOver(mine_pos) => {
+                    game_over = true;
+                    end_cell = mine_pos;
+                }
+                RevealResult::Continue => revealed = true,
+                RevealResult::CantReveal => (),
+            }
+        }
+
+        if game_over {
+            Ok(RevealResult::GameOver(end_cell))
+        } else if revealed {
+            Ok(RevealResult::Continue)
+        } else {
+            Ok(RevealResult::CantReveal)
+        }
     }
 }

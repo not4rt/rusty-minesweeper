@@ -7,7 +7,7 @@ use crate::game::models::game::GameDifficulty;
 #[derive(PartialEq, Eq)]
 pub enum RevealResult {
     Continue,
-    GameOver,
+    GameOver(CellPosition),
     CantReveal,
 }
 
@@ -122,7 +122,10 @@ impl Board {
     /// * `pos` - The position of the cell to reveal
     ///
     /// # Returns
-    /// * `GameResult<RevealResult>` - `Ok(RevealResult::GameOver)` if the cell is a mine`Ok(RevealResult::Continue)`e) if the game continues
+    /// * `GameResult<RevealResult>` -
+    ///   `Ok(RevealResult::GameOver)` if the cell is a mine
+    ///   `Ok(RevealResult::Continue)`e) if the game continues
+    ///   `Ok(RevealResult::CantReveal)` if the cell is already revealed or flagged
     ///
     /// # Errors
     /// Returns error if the position is invalid or already revealed
@@ -136,7 +139,7 @@ impl Board {
         self.cells[pos.x][pos.y].reveal();
 
         if self.cells[pos.x][pos.y].is_mine() {
-            return Ok(RevealResult::GameOver);
+            return Ok(RevealResult::GameOver(pos));
         }
 
         self.revealed_count = self.revealed_count.saturating_add(1);
@@ -172,6 +175,9 @@ impl Board {
         let mine_positions = self.mine_positions().clone();
 
         for mine_pos in mine_positions {
+            if self.cells[mine_pos.x][mine_pos.y].is_flagged() {
+                continue;
+            }
             self.cells[mine_pos.x][mine_pos.y].reveal();
         }
     }
