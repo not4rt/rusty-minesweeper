@@ -251,10 +251,7 @@ impl GameState {
     /// # Errors
     /// Will return `GameError` if the game is already over.
     pub fn chording(&mut self, pos: CellPosition) -> GameResult<RevealResult> {
-        if self.status.is_over()
-            || self.board.cell(pos)?.is_empty()
-            || self.board.cell(pos)?.is_hidden()
-        {
+        if self.status.is_over() || self.board.cell(pos)?.is_hidden() {
             return Ok(RevealResult::CantReveal);
         }
 
