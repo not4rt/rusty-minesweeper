@@ -11,7 +11,7 @@ env:
   TOOLCHAIN_PROFILE: minimal
 
 jobs:
-  Validate style:
+  style:
     runs-on: ubuntu-latest
 
     permissions:
@@ -32,7 +32,7 @@ jobs:
       - name: Run cargo clippy
         run: cargo clippy -- -W clippy::nursery -W clippy::pedantic -W rust-2018-idioms -W rust-2021-compatibility
 
-  Release Rust Minesweeper:
+  release:
     runs-on: ubuntu-latest
 
     permissions:
