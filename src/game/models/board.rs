@@ -214,7 +214,11 @@ impl Board {
         let mine_positions = self.mine_positions().clone();
 
         for mine_pos in mine_positions {
+            if self.cells[mine_pos.x][mine_pos.y].is_flagged() {
+                continue;
+            }
             self.cells[mine_pos.x][mine_pos.y].flag();
+            self.flagged_count = self.flagged_count.saturating_add(1);
         }
     }
 

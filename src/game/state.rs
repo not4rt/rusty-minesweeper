@@ -178,7 +178,9 @@ impl GameState {
 
     #[must_use]
     pub fn flags_remaining(&self) -> isize {
-        if self.elapsed_seconds == 0 {
+        if self.custom_flags_remaining
+            < self.difficulty.mines_count.try_into().unwrap_or(isize::MAX)
+        {
             self.custom_flags_remaining
         } else {
             let mines_count = self.difficulty.mines_count.try_into().unwrap_or(isize::MAX);
