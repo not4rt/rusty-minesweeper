@@ -11,7 +11,7 @@ env:
   TOOLCHAIN_PROFILE: minimal
 
 jobs:
-  style:
+  Validate style:
     runs-on: ubuntu-latest
 
     permissions:
@@ -31,10 +31,28 @@ jobs:
       - run: cargo fmt --all -- --check
       - name: Run cargo clippy
         run: cargo clippy -- -W clippy::nursery -W clippy::pedantic -W rust-2018-idioms -W rust-2021-compatibility
+
+  Release Rust Minesweeper:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          components: rustfmt
+      - name: Install GTK4 requirements
+        run: sudo apt install libgtk-4-dev build-essential
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
       - name: Run cargo build
         run: cargo build --release
       - name: Release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
         with:
+          tag_name: ${{ Actions Test }}
           files: target/release/rusty-minesweeper
