@@ -146,10 +146,6 @@ impl GameState {
             return Ok(false);
         }
 
-        if self.status.is_new() {
-            self.start_game();
-        }
-
         if self.board.cell(pos)?.is_flagged() {
             return self.board.unflag(pos);
         } else if self.board.cell(pos)?.is_hidden() {
