@@ -72,7 +72,7 @@ impl Default for CellContent {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct CellPosition {
     pub x: usize,
     pub y: usize,

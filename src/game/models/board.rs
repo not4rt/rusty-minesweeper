@@ -31,7 +31,11 @@ impl Board {
     /// # Errors
     /// * Returns `GameError::InvalidBoardSize` if board size is 0
     /// * Returns `GameError::InvalidMinesCount` if mines count is 0 or exceeds board capacity
-    pub fn new(difficulty: GameDifficulty, revealed_cell: CellPosition) -> GameResult<Self> {
+    pub fn new(
+        difficulty: GameDifficulty,
+        revealed_cell: CellPosition,
+        flagged_cells: Option<&HashSet<CellPosition>>,
+    ) -> GameResult<Self> {
         Self::validate_difficulty(difficulty)?;
 
         let mut board = Self {
@@ -44,6 +48,12 @@ impl Board {
 
         board.place_mines(difficulty.mines_count, revealed_cell);
         board.calculate_adjacent_mines();
+
+        if let Some(flagged_cells) = flagged_cells {
+            for flagged_cell in flagged_cells {
+                board.flag(*flagged_cell)?;
+            }
+        }
 
         Ok(board)
     }

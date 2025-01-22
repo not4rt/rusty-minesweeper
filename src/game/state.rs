@@ -24,7 +24,7 @@ impl GameState {
     pub fn new(difficulty: GameDifficulty) -> GameResult<Self> {
         Board::validate_difficulty(difficulty)?;
         // It generates a new board on start_game method, this board is wasted. TODO!
-        let board: Board = Board::new(difficulty, CellPosition::new(0, 0))?;
+        let board: Board = Board::new(difficulty, CellPosition::new(0, 0), None)?;
         Ok(Self {
             board,
             difficulty,
@@ -42,7 +42,7 @@ impl GameState {
     /// # Errors
     /// Will return `GameError` if the board size is 0 or the mines count is invalid.
     pub fn restart(&mut self) -> GameResult<()> {
-        let board: Board = Board::new(self.difficulty, CellPosition::new(0, 0))?;
+        let board: Board = Board::new(self.difficulty, CellPosition::new(0, 0), None)?;
         self.board = board;
         self.status = GameStatus::New;
         self.start_time = None;
@@ -74,7 +74,7 @@ impl GameState {
                 .checked_sub(Duration::from_secs(1))
                 .unwrap_or_else(Instant::now),
         );
-        self.board = Board::new(self.difficulty, revealed_cell)
+        self.board = Board::new(self.difficulty, revealed_cell, Some(&self.flagged_cells))
             .expect("Failed to create board. Bad difficulty?");
         self.status = GameStatus::InProgress;
     }
@@ -168,8 +168,10 @@ impl GameState {
         }
 
         if self.board.cell(pos)?.is_flagged() {
+            self.flagged_cells.remove(&pos);
             return self.board.unflag(pos);
         } else if self.board.cell(pos)?.is_hidden() {
+            self.flagged_cells.insert(pos);
             return self.board.flag(pos);
         }
 
