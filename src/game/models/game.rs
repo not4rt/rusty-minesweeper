@@ -59,7 +59,7 @@ impl GameDifficulty {
         mines_count: 100,
     };
     pub const CUSTOM: Self = Self {
-        board_size: 150,
+        board_size: 100,
         mines_count: 10,
     };
 }

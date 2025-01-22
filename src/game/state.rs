@@ -13,7 +13,7 @@ pub struct GameState {
     elapsed_seconds: u64,
     revealed_cells: HashSet<CellPosition>,
     flagged_cells: HashSet<CellPosition>,
-    custom_flags_remaining: usize,
+    custom_flags_remaining: isize,
 }
 
 impl GameState {
@@ -158,13 +158,12 @@ impl GameState {
     }
 
     #[must_use]
-    pub const fn flags_remaining(&self) -> usize {
+    pub fn flags_remaining(&self) -> isize {
         if self.elapsed_seconds == 0 {
             self.custom_flags_remaining
         } else {
-            self.difficulty
-                .mines_count
-                .saturating_sub(self.board.flagged_count())
+            let mines_count = self.difficulty.mines_count.try_into().unwrap_or(isize::MAX);
+            mines_count - (self.board.flagged_count())
         }
     }
 
@@ -191,7 +190,9 @@ impl GameState {
         if !self.status.is_over() {
             self.elapsed_seconds = self.start_time.elapsed().as_secs();
 
-            if self.custom_flags_remaining < self.difficulty.mines_count {
+            if self.custom_flags_remaining
+                < self.difficulty.mines_count.try_into().unwrap_or(isize::MAX)
+            {
                 self.custom_flags_remaining = self.custom_flags_remaining.saturating_add(1);
             }
         }

@@ -16,7 +16,7 @@ pub struct Board {
     size: usize,
     mine_positions: HashSet<CellPosition>,
     revealed_count: usize,
-    flagged_count: usize,
+    flagged_count: isize,
 }
 
 impl Board {
@@ -78,9 +78,19 @@ impl Board {
     pub fn flag(&mut self, pos: CellPosition) -> GameResult<bool> {
         self.validate_position(pos)?;
 
-        if self.flagged_count >= self.mine_positions.len() {
-            return Ok(false);
-        }
+        // Bug in the MineSweeper XP version: On the original game, you can have more flags than mines.
+        // Maybe this is a feature, not a bug. This minesweeper aim to reproduce the original game.
+        // On future versions, it could have this check below.
+        // if self.flagged_count >= self.mine_positions.len() as isize {
+        //     return Ok(false);
+        // }
+
+        // Bug in the MineSweeper XP version: On the original game, If you flag more than 99 + mines_count, the counter go to -00.
+        // This minesweeper aim to reproduce the original game.
+        // On future versions, it could have this check below.
+        // if self.flagged_count > (99 + self.mine_positions.len()) as isize {
+        //     return Ok(false);
+        // }
 
         let was_flagged = self.cells[pos.x][pos.y].flag();
 
@@ -251,7 +261,7 @@ impl Board {
     }
 
     #[must_use]
-    pub const fn flagged_count(&self) -> usize {
+    pub const fn flagged_count(&self) -> isize {
         self.flagged_count
     }
 
