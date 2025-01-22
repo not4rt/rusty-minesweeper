@@ -80,27 +80,6 @@ impl FactoryComponent for ButtonCell {
 
             #[watch]
             set_label: &self.label,
-            // add_controller = gtk::GestureClick {
-            //     set_button: gtk::gdk::ffi::GDK_BUTTON_SECONDARY as u32,
-            //     connect_begin[sender, index] => move |_, _|{
-            //         sender.output(ButtonOutput::Flag(index.current_index())).unwrap();
-            //     },
-            // },
-            // add_controller = gtk::GestureClick {
-            //     set_button: gtk::gdk::ffi::GDK_BUTTON_PRIMARY as u32,
-            //     set_state: gtk::EventSequenceState::Denied,
-            //     connect_pressed[sender, index] => move |gesture, _, _, _|{
-            //         gesture.set_state(gtk::EventSequenceState::Denied);
-            //     },
-            // },
-            // add_controller = gtk::EventControllerMotion {
-            //     connect_enter[index]=> move |_, _, _| {
-            //         println!("Mouse entered label {}", index.current_index());
-            //     },
-            //     connect_leave[index]=> move |_| {
-            //         println!("Mouse left label {}", index.current_index());
-            //     },
-            // },
         }
     }
 

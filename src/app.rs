@@ -115,7 +115,7 @@ impl SimpleComponent for App {
                             set_size_request: (30, 30),
                             add_css_class: "restart_button",
                             #[watch]
-                            set_label: &model.game_state.status().to_string(),
+                            set_label: &model.emoji_status(),
                             connect_clicked[sender] => move |_| {
                                 sender.input(Msg::Restart);
                             },
@@ -558,6 +558,14 @@ impl App {
                 let adj_index = adj_pos.to_index(self.game_state.difficulty().board_size);
                 self.cells.send(adj_index, ButtonMsg::Deactivate);
             }
+        }
+    }
+
+    fn emoji_status(&self) -> String {
+        if self.mouse_tracker.is_pressed() && !self.game_state.status().is_over() {
+            "😯".to_owned()
+        } else {
+            self.game_state.status().to_string()
         }
     }
 }
