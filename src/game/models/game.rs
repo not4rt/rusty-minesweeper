@@ -63,7 +63,7 @@ impl GameDifficulty {
     };
     pub const INTERMEDIATE: Self = Self {
         board_size: 16,
-        mines_count: 50,
+        mines_count: 40,
     };
     pub const EXPERT: Self = Self {
         board_size: 22,
