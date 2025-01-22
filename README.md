@@ -7,22 +7,21 @@ A reimplementation of the classic Windows Minesweeper, built with Rust and Relm4
 
 ![game-beginner3](https://github.com/user-attachments/assets/34a434c2-81aa-4938-89a2-c2efdff9e308)
 
-## ✨ Features
+## Features
 
 - 🎮 Classic Minesweeper gameplay
-- 🎯 Three difficulty levels: Beginner, Intermediate, and Expert
+- 😎 Emojis for game states
+- 🎯 Difficulty levels: Beginner, Intermediate, Expert and Custom
 - ⏱️ Real-time game timer
-- 🚩 Mine flagging system
-- 😎 Classic XP-style emojis for game states
-- 🎨 GTK4 interface
+- 🚩 [Chording](https://minesweeper.fandom.com/wiki/Chording) and flagging system
 
-## 🚀 Technical Details
+## Technical Details
 
 - Built using Rust 🦀
-- Leverages `relm4` for reactive GUI programming with GTK4
+- Leverages `relm4` for simplier GUI programming with GTK4
 - Minimal dependencies
 
-## 🛠️ Building from Source
+## Building from Source
 
 ### Prerequisites
 
@@ -38,10 +37,10 @@ cd rusty-minesweeper
 cargo run --release
 ```
 
-## 🎮 How to Play
+## How to Play
 
 1. Left-click to reveal cells
 2. Right-click to flag potential mines
-3. Clear all non-mine cells to win!
-4. Choose your difficulty level from the Game menu
-
+3. Middle-click to [chord](https://minesweeper.fandom.com/wiki/Chording)
+4. Clear all non-mine cells to win!
+5. Choose your difficulty level from the Game menu
