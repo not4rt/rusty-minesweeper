@@ -11,7 +11,8 @@ env:
   TOOLCHAIN_PROFILE: minimal
 
 jobs:
-  style:
+  fmt:
+    name: Check Style
     runs-on: ubuntu-latest
 
     permissions:
@@ -24,16 +25,16 @@ jobs:
         with:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
           components: rustfmt
-      - name: Install GTK4 requirements
-        run: sudo apt install libgtk-4-dev build-essential
-      - name: Setup Rust cache
-        uses: Swatinem/rust-cache@v2
       - run: cargo fmt --all -- --check
       - name: Run cargo clippy
         run: cargo clippy -- -W clippy::nursery -W clippy::pedantic -W rust-2018-idioms -W rust-2021-compatibility
 
-  release:
+
+  clippy:
+    name: Run Clippy
+    needs: [fmt]
     runs-on: ubuntu-latest
+    
 
     permissions:
       contents: read
@@ -45,14 +46,38 @@ jobs:
         with:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
           components: rustfmt
-      - name: Install GTK4 requirements
-        run: sudo apt install libgtk-4-dev build-essential
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@v2
+      - name: Install GTK4 requirements
+        run: sudo apt install libgtk-4-dev build-essential
+      - name: Run cargo clippy
+        run: cargo clippy -- -W clippy::nursery -W clippy::pedantic -W rust-2018-idioms -W rust-2021-compatibility
+
+  release:
+    name: Release Linux Binary
+    needs: [fmt, clippy]
+    runs-on: ubuntu-latest
+    
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          components: rustfmt
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+      - name: Install GTK4 requirements
+        run: sudo apt install libgtk-4-dev build-essential
       - name: Run cargo build
         run: cargo build --release
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: Actions Test
+          token: ${{ secrets.TOKEN }}
           files: target/release/rusty-minesweeper
