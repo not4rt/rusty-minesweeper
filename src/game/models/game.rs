@@ -4,6 +4,7 @@ pub enum GameStatus {
     Won,
     Lost,
     InProgress,
+    New,
 }
 
 impl GameStatus {
@@ -21,6 +22,16 @@ impl GameStatus {
     pub const fn is_lost(&self) -> bool {
         matches!(self, Self::Lost)
     }
+
+    #[must_use]
+    pub const fn is_in_progress(&self) -> bool {
+        matches!(self, Self::InProgress)
+    }
+
+    #[must_use]
+    pub const fn is_new(&self) -> bool {
+        matches!(self, Self::New)
+    }
 }
 
 impl fmt::Display for GameStatus {
@@ -28,7 +39,7 @@ impl fmt::Display for GameStatus {
         match self {
             Self::Won => write!(f, "😎"),
             Self::Lost => write!(f, "👺"),
-            Self::InProgress => write!(f, "🙂"),
+            Self::InProgress | Self::New => write!(f, "🙂"),
         }
     }
 }

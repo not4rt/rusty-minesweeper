@@ -3,13 +3,13 @@ use crate::game::models::board::{Board, RevealResult};
 use crate::game::models::cell::CellPosition;
 use crate::game::models::game::{GameDifficulty, GameStatus};
 use std::collections::{HashSet, VecDeque};
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 pub struct GameState {
     board: Board,
     difficulty: GameDifficulty,
     status: GameStatus,
-    start_time: Instant,
+    start_time: Option<Instant>,
     elapsed_seconds: u64,
     revealed_cells: HashSet<CellPosition>,
     flagged_cells: HashSet<CellPosition>,
@@ -26,8 +26,8 @@ impl GameState {
         Ok(Self {
             board,
             difficulty,
-            status: GameStatus::InProgress,
-            start_time: Instant::now(),
+            status: GameStatus::New,
+            start_time: None,
             elapsed_seconds: 0,
             revealed_cells: HashSet::with_capacity(difficulty.board_size.pow(2)),
             flagged_cells: HashSet::with_capacity(difficulty.mines_count),
@@ -48,6 +48,16 @@ impl GameState {
         false
     }
 
+    // Starts the game with already 1 second elapsed as the original game does.
+    fn start_game(&mut self) {
+        self.start_time = Some(
+            Instant::now()
+                .checked_sub(Duration::from_secs(1))
+                .unwrap_or_else(Instant::now),
+        );
+        self.status = GameStatus::InProgress;
+    }
+
     /// Reveals the cell at the given position.
     ///
     /// # Arguments
@@ -61,6 +71,10 @@ impl GameState {
     pub fn reveal_cell(&mut self, pos: CellPosition) -> GameResult<RevealResult> {
         if self.board.cell(pos)?.is_revealed() || self.board.cell(pos)?.is_flagged() {
             return Ok(RevealResult::CantReveal);
+        }
+
+        if self.status.is_new() {
+            self.start_game();
         }
 
         let reveal_result = self.reveal_area(pos)?;
@@ -132,6 +146,10 @@ impl GameState {
             return Ok(false);
         }
 
+        if self.status.is_new() {
+            self.start_game();
+        }
+
         if self.board.cell(pos)?.is_flagged() {
             return self.board.unflag(pos);
         } else if self.board.cell(pos)?.is_hidden() {
@@ -147,9 +165,9 @@ impl GameState {
     /// Will return `GameError` if the board size is 0 or the mines count is invalid.
     pub fn restart(&mut self) -> GameResult<()> {
         self.board = Board::new(self.difficulty)?;
-        self.status = GameStatus::InProgress;
+        self.status = GameStatus::New;
         self.elapsed_seconds = 0;
-        self.start_time = Instant::now();
+        self.start_time = None;
         self.custom_flags_remaining = 0;
         self.revealed_cells.clear();
         self.flagged_cells.clear();
@@ -187,14 +205,16 @@ impl GameState {
     }
 
     pub fn tick(&mut self) {
-        if !self.status.is_over() {
-            self.elapsed_seconds = self.start_time.elapsed().as_secs();
-
-            if self.custom_flags_remaining
-                < self.difficulty.mines_count.try_into().unwrap_or(isize::MAX)
-            {
-                self.custom_flags_remaining = self.custom_flags_remaining.saturating_add(1);
+        if self.status.is_in_progress() {
+            if let Some(start_time) = self.start_time {
+                self.elapsed_seconds = start_time.elapsed().as_secs();
             }
+        }
+
+        if self.custom_flags_remaining
+            < self.difficulty.mines_count.try_into().unwrap_or(isize::MAX)
+        {
+            self.custom_flags_remaining = self.custom_flags_remaining.saturating_add(1);
         }
     }
 
