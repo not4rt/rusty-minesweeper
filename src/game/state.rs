@@ -22,7 +22,9 @@ impl GameState {
     /// # Errors
     /// Will return `GameError` if the board size is 0 or the mines count is invalid.
     pub fn new(difficulty: GameDifficulty) -> GameResult<Self> {
-        let board: Board = Board::new(difficulty)?;
+        Board::validate_difficulty(difficulty)?;
+        // It generates a new board on start_game method, this board is wasted. TODO!
+        let board: Board = Board::new(difficulty, CellPosition::new(0, 0))?;
         Ok(Self {
             board,
             difficulty,
@@ -33,6 +35,23 @@ impl GameState {
             flagged_cells: HashSet::with_capacity(difficulty.mines_count),
             custom_flags_remaining: 0,
         })
+    }
+
+    /// Restarts the game with the same difficulty.
+    ///
+    /// # Errors
+    /// Will return `GameError` if the board size is 0 or the mines count is invalid.
+    pub fn restart(&mut self) -> GameResult<()> {
+        let board: Board = Board::new(self.difficulty, CellPosition::new(0, 0))?;
+        self.board = board;
+        self.status = GameStatus::New;
+        self.start_time = None;
+        self.elapsed_seconds = 0;
+        self.revealed_cells = HashSet::with_capacity(self.difficulty.board_size.pow(2));
+        self.flagged_cells = HashSet::with_capacity(self.difficulty.mines_count);
+        self.custom_flags_remaining = 0;
+
+        Ok(())
     }
 
     fn check_win_condition(&mut self) -> bool {
@@ -49,12 +68,14 @@ impl GameState {
     }
 
     // Starts the game with already 1 second elapsed as the original game does.
-    fn start_game(&mut self) {
+    fn start_game(&mut self, revealed_cell: CellPosition) {
         self.start_time = Some(
             Instant::now()
                 .checked_sub(Duration::from_secs(1))
                 .unwrap_or_else(Instant::now),
         );
+        self.board = Board::new(self.difficulty, revealed_cell)
+            .expect("Failed to create board. Bad difficulty?");
         self.status = GameStatus::InProgress;
     }
 
@@ -74,7 +95,7 @@ impl GameState {
         }
 
         if self.status.is_new() {
-            self.start_game();
+            self.start_game(pos);
         }
 
         let reveal_result = self.reveal_area(pos)?;
@@ -155,22 +176,6 @@ impl GameState {
         Ok(false)
     }
 
-    /// Toggles the flag of the cell at the given position.
-    ///
-    /// # Errors
-    /// Will return `GameError` if the board size is 0 or the mines count is invalid.
-    pub fn restart(&mut self) -> GameResult<()> {
-        self.board = Board::new(self.difficulty)?;
-        self.status = GameStatus::New;
-        self.elapsed_seconds = 0;
-        self.start_time = None;
-        self.custom_flags_remaining = 0;
-        self.revealed_cells.clear();
-        self.flagged_cells.clear();
-
-        Ok(())
-    }
-
     #[must_use]
     pub fn flags_remaining(&self) -> isize {
         if self.elapsed_seconds == 0 {
@@ -219,14 +224,15 @@ impl GameState {
     /// # Arguments
     /// * `difficulty` - The new difficulty to set
     ///
-    /// # Panics
-    /// Will panic if the game cannot be restarted with the new difficulty.
-    pub fn change_difficulty(&mut self, difficulty: GameDifficulty) {
+    /// # Errors
+    /// Will return `GameError` if the game cannot be restarted with the new difficulty.
+    pub fn change_difficulty(&mut self, difficulty: GameDifficulty) -> GameResult<()> {
         if self.difficulty != difficulty {
             self.difficulty = difficulty;
         }
-        self.restart()
-            .expect("Failed to restart game. Bad difficulty?");
+        self.restart()?;
+
+        Ok(())
     }
 
     /// Returns the display string for the cell at the given position.

@@ -143,7 +143,6 @@ impl SimpleComponent for App {
                                 }
                             },
                             add_controller = gtk::GestureClick {
-                                // set_button: gtk::gdk::ffi::GDK_BUTTON_PRIMARY as u32,
                                 connect_pressed[sender] => move |_, _, _, _|{
                                     sender.input(Msg::LeftButtonPressed);
                                 },
@@ -333,7 +332,9 @@ impl App {
     }
 
     fn handle_difficulty_change(&mut self, difficulty: GameDifficulty) {
-        self.game_state.change_difficulty(difficulty);
+        self.game_state
+            .change_difficulty(difficulty)
+            .expect("Failed to change difficulty. Bad difficulty?");
 
         // Reset mouse tracker
         self.mouse_tracker = MouseTracker::new();

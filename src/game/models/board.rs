@@ -31,7 +31,30 @@ impl Board {
     /// # Errors
     /// * Returns `GameError::InvalidBoardSize` if board size is 0
     /// * Returns `GameError::InvalidMinesCount` if mines count is 0 or exceeds board capacity
-    pub fn new(difficulty: GameDifficulty) -> GameResult<Self> {
+    pub fn new(difficulty: GameDifficulty, revealed_cell: CellPosition) -> GameResult<Self> {
+        Self::validate_difficulty(difficulty)?;
+
+        let mut board = Self {
+            cells: vec![vec![Cell::default(); difficulty.board_size]; difficulty.board_size],
+            size: difficulty.board_size,
+            mine_positions: HashSet::with_capacity(difficulty.mines_count),
+            revealed_count: 0,
+            flagged_count: 0,
+        };
+
+        board.place_mines(difficulty.mines_count, revealed_cell);
+        board.calculate_adjacent_mines();
+
+        Ok(board)
+    }
+
+    /// Validates the game difficulty settings.
+    ///
+    /// # Errors
+    /// * Returns `GameError::InvalidBoardSize` if board size is 0
+    /// * Returns `GameError::InvalidMinesCount` if mines count is 0 or exceeds board capacity
+    /// * Returns `GameError::InvalidCellPosition` if the position is invalid
+    pub const fn validate_difficulty(difficulty: GameDifficulty) -> GameResult<()> {
         if difficulty.board_size == 0 {
             return Err(GameError::InvalidBoardSize(0));
         }
@@ -44,18 +67,7 @@ impl Board {
             ));
         }
 
-        let mut board = Self {
-            cells: vec![vec![Cell::default(); difficulty.board_size]; difficulty.board_size],
-            size: difficulty.board_size,
-            mine_positions: HashSet::with_capacity(difficulty.mines_count),
-            revealed_count: 0,
-            flagged_count: 0,
-        };
-
-        board.place_mines(difficulty.mines_count);
-        board.calculate_adjacent_mines();
-
-        Ok(board)
+        Ok(())
     }
 
     const fn validate_position(&self, pos: CellPosition) -> GameResult<()> {
@@ -157,7 +169,8 @@ impl Board {
         Ok(RevealResult::Continue)
     }
 
-    fn place_mines(&mut self, mines_count: usize) {
+    /// Place mines on the board. The first revealed cell will not have a mine.
+    fn place_mines(&mut self, mines_count: usize, revealed_cell: CellPosition) {
         let mut mines_placed = 0;
 
         let mut rng = fastrand::Rng::new();
@@ -168,7 +181,7 @@ impl Board {
                 y: rng.usize(..self.size),
             };
 
-            if !self.cells[mine_pos.x][mine_pos.y].is_mine() {
+            if !self.cells[mine_pos.x][mine_pos.y].is_mine() && mine_pos != revealed_cell {
                 self.cells[mine_pos.x][mine_pos.y].content = CellContent::Mine;
                 self.mine_positions.insert(mine_pos);
                 mines_placed += 1;
