@@ -96,12 +96,10 @@ impl SimpleComponent for App {
                         set_orientation: gtk::Orientation::Horizontal,
                         set_css_classes: &["top-box"],
                         set_hexpand: true,
-                        set_homogeneous: true,
 
                         #[name(mines_remaining_label)]
                         gtk::Label {
                             set_hexpand: true,
-                            set_vexpand: true,
                             set_halign: gtk::Align::Start,
                             set_css_classes: &["mines_remaining_label", "seven-segment"],
                             #[watch]
@@ -110,9 +108,8 @@ impl SimpleComponent for App {
 
                         #[name(restart_button)]
                         gtk::Button {
-                            set_hexpand: true,
                             set_halign: gtk::Align::Center,
-                            set_size_request: (30, 30),
+                            set_size_request: (10, 10),
                             add_css_class: "restart_button",
                             #[watch]
                             set_label: &model.emoji_status(),

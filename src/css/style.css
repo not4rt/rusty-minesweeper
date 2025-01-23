@@ -1,28 +1,29 @@
 /* Variables */
 :root {
-    --primary-color: #515558;
-    --secondary-color: white;
-    --accent-color: #f30000;
+    --background-color: #c0c0c0;
+    --shadow-color: #707070;
+    --light-color: white;
+    --red-color: #ff2c2c;
     --border-size: 3px;
 }
 
 button.restart_button {
-    font-size: 150%;
+    font-size: 140%;
     border-radius: 0;
-    border-top: var(--border-size) solid var(--secondary-color);
-    border-left: var(--border-size) solid var(--secondary-color);
-    border-right: 4px solid var(--primary-color);
-    border-bottom: 4px solid var(--primary-color);
-    margin: -4px;
-    background-color: #949494;
+    border-top: var(--border-size) solid var(--light-color);
+    border-left: var(--border-size) solid var(--light-color);
+    border-right: 4px solid var(--shadow-color);
+    border-bottom: 4px solid var(--shadow-color);
+    margin-bottom: -4px;
+    background-color: var(--background-color);
     background-image: none;
 }
 
 button.restart_button:active {
-    border-top: var(--border-size) solid var(--primary-color);
-    border-left: var(--border-size) solid var(--primary-color);
-    border-right: 1px solid var(--primary-color);
-    border-bottom: 1px solid var(--primary-color);
+    border-top: var(--border-size) solid var(--shadow-color);
+    border-left: var(--border-size) solid var(--shadow-color);
+    border-right: 1px solid var(--shadow-color);
+    border-bottom: 1px solid var(--shadow-color);
 }
 
 label.mines_remaining_label,
@@ -37,11 +38,11 @@ label.time_remaining_label {
     min-width: 20px;
     min-height: 20px;
     border-radius: 0;
-    border-top: var(--border-size) solid var(--secondary-color);
-    border-left: var(--border-size) solid var(--secondary-color);
-    border-right: 4px solid var(--primary-color);
-    border-bottom: 4px solid var(--primary-color);
-    background-color: #949494;
+    border-top: var(--border-size) solid var(--light-color);
+    border-left: var(--border-size) solid var(--light-color);
+    border-right: 4px solid var(--shadow-color);
+    border-bottom: 4px solid var(--shadow-color);
+    background-color: var(--background-color);
     background-image: none;
     margin-top: -1px;
     margin-left: -1px;
@@ -51,7 +52,7 @@ label.time_remaining_label {
     font-family: "Ubuntu Mono", monospace;
     font-size: xx-large;
     font-weight: bold;
-    color: var(--accent-color);
+    color: var(--red-color);
     background-color: #1A1A1A;
 }
 
@@ -60,39 +61,39 @@ label.time_remaining_label {
 }
 
 .inner-box {
-    border-top: var(--border-size) solid var(--secondary-color);
-    border-left: var(--border-size) solid var(--secondary-color);
-    background-color: #788088;
+    border-top: var(--border-size) solid var(--light-color);
+    border-left: var(--border-size) solid var(--light-color);
+    background-color: var(--background-color);
     padding: 10px;
 }
 
 .top-box {
-    border-top: var(--border-size) solid var(--primary-color);
-    border-left: var(--border-size) solid var(--primary-color);
-    border-right: var(--border-size) solid var(--secondary-color);
-    border-bottom: var(--border-size) solid var(--secondary-color);
+    border-top: var(--border-size) solid var(--shadow-color);
+    border-left: var(--border-size) solid var(--shadow-color);
+    border-right: var(--border-size) solid var(--light-color);
+    border-bottom: var(--border-size) solid var(--light-color);
     padding: 10px;
 }
 
 .bottom-box {
-    border-top: 5px solid var(--primary-color);
-    border-left: 5px solid var(--primary-color);
-    border-right: 5px solid var(--secondary-color);
-    border-bottom: 5px solid var(--secondary-color);
+    border-top: 5px solid var(--shadow-color);
+    border-left: 5px solid var(--shadow-color);
+    border-right: 5px solid var(--light-color);
+    border-bottom: 5px solid var(--light-color);
 }
 
 .active,
 .revealed-cell {
     font-weight: bolder;
-    border-top: 1px solid var(--primary-color);
-    border-left: 1px solid var(--primary-color);
+    border-top: 1px solid var(--shadow-color);
+    border-left: 1px solid var(--shadow-color);
     border-right: none;
     border-bottom: none;
-    background-color: #a7a8a8;
+    background-color: var(--background-color);
 }
 
 .lost-cell {
-    background-color: var(--accent-color);
+    background-color: var(--red-color);
 }
 
 .number-one {
