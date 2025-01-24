@@ -430,15 +430,18 @@ impl App {
         // Calculate new cell position
         #[allow(clippy::cast_possible_truncation)]
         #[allow(clippy::cast_precision_loss)]
-        let cell_size = f64::from(self.cells.widget().width()) / board_size as f64;
+        let cell_width = f64::from(self.cells.widget().width()) / board_size as f64;
+        #[allow(clippy::cast_possible_truncation)]
+        #[allow(clippy::cast_precision_loss)]
+        let cell_height = f64::from(self.cells.widget().height()) / board_size as f64;
         #[allow(clippy::cast_possible_truncation)]
         #[allow(clippy::cast_precision_loss)]
         #[allow(clippy::cast_sign_loss)]
-        let x = (x / cell_size).floor() as usize;
+        let x = (x / cell_width).floor() as usize;
         #[allow(clippy::cast_possible_truncation)]
         #[allow(clippy::cast_precision_loss)]
         #[allow(clippy::cast_sign_loss)]
-        let y = (y / cell_size).floor() as usize;
+        let y = (y / cell_height).floor() as usize;
         let cell_pos = CellPosition::new(x, y);
 
         // Return early if mouse hasn't moved to a new cell
