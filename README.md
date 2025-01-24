@@ -1,11 +1,12 @@
-# 💣 Rusty Minesweeper
-
-![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg)
-![GTK4](https://img.shields.io/badge/GTK-4.0-blue.svg)
-
-A reimplementation of the classic Windows Minesweeper, built with Rust and Relm4/GTK4.
-
-![game-beginner3](https://github.com/user-attachments/assets/34a434c2-81aa-4938-89a2-c2efdff9e308)
+<div align="center">
+  <h1>💣 Rusty Minesweeper</h1>
+  
+  ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg)
+  ![GTK4](https://img.shields.io/badge/GTK-4.0-blue.svg)
+  
+  <img src="https://github.com/user-attachments/assets/d00e91e0-1aa8-4cd5-ba15-f611cd369b34"/>
+  <h3>A reimplementation of the classic Windows Minesweeper, built with Rust and Relm4/GTK4.</h3>
+</div>
 
 ## Features
 
