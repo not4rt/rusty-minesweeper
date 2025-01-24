@@ -22,8 +22,9 @@ button.restart_button {
 button.restart_button:active {
     border-top: var(--border-size) solid var(--shadow-color);
     border-left: var(--border-size) solid var(--shadow-color);
-    border-right: 1px solid var(--shadow-color);
-    border-bottom: 1px solid var(--shadow-color);
+    border-right: none;
+    border-bottom: none;
+    margin-bottom: 0;
 }
 
 label.mines_remaining_label,
@@ -32,6 +33,27 @@ label.time_remaining_label {
     margin: 0;
     padding: 0;
     line-height: 1;
+    font-family: "Ubuntu Mono", monospace;
+    font-size: xx-large;
+    font-weight: bold;
+    color: var(--red-color);
+    background-color: #1A1A1A;
+    border-top: 1px solid var(--shadow-color);
+    border-left: 1px solid var(--shadow-color);
+    border-right: 1px solid var(--light-color);
+    border-bottom: 1px solid var(--light-color);
+}
+
+.mines_remaining_box {
+    border-top: 1px solid var(--shadow-color);
+    border-left: 1px solid var(--shadow-color);
+    border-right: 1px solid var(--light-color);
+    border-bottom: 1px solid var(--light-color);
+    margin: 0;
+    padding-left: 1px;
+    padding-right: 1px;
+    padding-bottom: 1px;
+    background-color: #1A1A1A;
 }
 
 .square-button {
@@ -46,14 +68,6 @@ label.time_remaining_label {
     background-image: none;
     margin-top: -1px;
     margin-left: -1px;
-}
-
-.seven-segment {
-    font-family: "Ubuntu Mono", monospace;
-    font-size: xx-large;
-    font-weight: bold;
-    color: var(--red-color);
-    background-color: #1A1A1A;
 }
 
 .main-box {
@@ -138,7 +152,11 @@ label {
     transition-timing-function: ease-out;
 } */
 
-box.horizontal {
+popover,
+contents,
+.aboutdialog,
+viewport,
+.menu-bar {
     background-color: #eceacf;
     border-radius: 0;
     border-color: #000000;
@@ -148,14 +166,18 @@ box.horizontal {
     text-decoration-color: #000000;
 }
 
-.menu-bar {
-    background-color: #eceacf;
-    border-color: #000000;
-    border-radius: 0;
-    color: #000000;
-    caret-color: #000000;
-    outline-color: #000000;
-    text-decoration-color: #000000;
+.titlebar {
+    background-color: #245dda;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+button.close {
+    background-color: #FF0000;
+    padding: 3px;
+    color: #FFFFFF;
+    font-weight: bolder;
+    border: 1px solid white;
 }
 
 item {
