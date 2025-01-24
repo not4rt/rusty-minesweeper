@@ -84,16 +84,16 @@ impl CellPosition {
         Self { x, y }
     }
     #[must_use]
-    pub const fn from_index(index: usize, board_size: usize) -> Self {
+    pub const fn from_index(index: usize, board_size: (usize, usize)) -> Self {
         Self {
-            x: index / board_size,
-            y: index % board_size,
+            x: index / board_size.0,
+            y: index % board_size.1,
         }
     }
 
     #[must_use]
-    pub const fn to_index(self, board_size: usize) -> usize {
-        (self.x * board_size) + self.y
+    pub const fn to_index(self, board_size: (usize, usize)) -> usize {
+        (self.x * board_size.1) + self.y
     }
 }
 

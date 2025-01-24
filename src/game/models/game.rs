@@ -52,25 +52,25 @@ impl Default for GameStatus {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct GameDifficulty {
-    pub board_size: usize,
+    pub board_size: (usize, usize),
     pub mines_count: usize,
 }
 
 impl GameDifficulty {
     pub const BEGINNER: Self = Self {
-        board_size: 9,
+        board_size: (9, 9),
         mines_count: 10,
     };
     pub const INTERMEDIATE: Self = Self {
-        board_size: 16,
+        board_size: (16, 16),
         mines_count: 40,
     };
     pub const EXPERT: Self = Self {
-        board_size: 22,
+        board_size: (30, 16),
         mines_count: 100,
     };
     pub const CUSTOM: Self = Self {
-        board_size: 100,
+        board_size: (100, 100),
         mines_count: 10,
     };
 }

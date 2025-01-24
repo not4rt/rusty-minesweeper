@@ -1,25 +1,28 @@
-use gtk::prelude::WidgetExt;
+use gtk::prelude::{GridExt, WidgetExt};
 use relm4::{
     factory::positions::GridPosition,
     prelude::{DynamicIndex, FactoryComponent},
     FactorySender,
 };
 
+use crate::game::models::cell::CellPosition;
+
 const CELL_SIZE: i32 = 20;
+const FLAG_ICON: &[u8] = include_bytes!("../../assets/flag.png");
 
 pub struct ButtonCell {
     pub label: String,
     pub css_classes: Vec<String>,
-    pub grid_size: usize,
+    pub position: CellPosition,
 }
 
 impl ButtonCell {
     #[must_use]
-    pub fn new(grid_size: usize) -> Self {
+    pub fn new(pos: CellPosition) -> Self {
         Self {
             label: String::new(),
             css_classes: vec!["square-button".to_string()],
-            grid_size,
+            position: pos,
         }
     }
 }
@@ -27,28 +30,20 @@ impl ButtonCell {
 #[derive(Debug, Clone)]
 pub enum ButtonMsg {
     Display(String),
-    ChangeGridSize(usize),
     Reset,
     AddCssClass(String),
     Activate,
     Deactivate,
 }
 
-#[derive(Debug)]
-pub enum ButtonOutput {
-    Reveal(usize),
-    Flag(usize),
-}
-
 impl relm4::factory::Position<GridPosition, DynamicIndex> for ButtonCell {
-    fn position(&self, index: &DynamicIndex) -> GridPosition {
-        let index = index.current_index();
-        let x = index % self.grid_size;
-        let y = index / self.grid_size;
+    fn position(&self, _index: &DynamicIndex) -> GridPosition {
+        let x = self.position.x;
+        let y = self.position.y;
 
         GridPosition {
-            row: i32::try_from(x).expect("This conversion should always succeed. (C01)"),
-            column: i32::try_from(y).expect("This conversion should always succeed. (C02)"),
+            column: i32::try_from(x).expect("This conversion should always succeed. (C02)"),
+            row: i32::try_from(y).expect("This conversion should always succeed. (C01)"),
             width: 1,
             height: 1,
         }
@@ -59,7 +54,7 @@ impl relm4::factory::Position<GridPosition, DynamicIndex> for ButtonCell {
 impl FactoryComponent for ButtonCell {
     type Init = Self;
     type Input = ButtonMsg;
-    type Output = ButtonOutput;
+    type Output = ();
     type CommandOutput = ();
     type Widgets = ButtonCellWidgets;
     type ParentWidget = gtk::Grid;
@@ -67,19 +62,39 @@ impl FactoryComponent for ButtonCell {
 
     view! {
         #[root]
-        gtk::Label {
+        gtk::Box {
             set_can_focus: false,
-            set_hexpand: true,
-            set_vexpand: true,
+            set_hexpand: false,
+            set_vexpand: false,
             set_width_request: CELL_SIZE,
             set_height_request: CELL_SIZE,
-            #[watch]
-            set_css_classes: &self.css_classes.iter().map(std::string::String::as_str).collect::<Vec<&str>>(),
-
             set_can_target: false,
 
-            #[watch]
-            set_label: &self.label,
+            gtk::Label {
+                set_can_focus: false,
+                set_hexpand: true,
+                set_vexpand: true,
+                set_width_request: CELL_SIZE,
+                set_height_request: CELL_SIZE,
+                set_can_target: false,
+
+                #[watch]
+                set_css_classes: &self.css_classes.iter().map(std::string::String::as_str).collect::<Vec<&str>>(),
+                #[watch]
+                set_label: &self.label,
+                #[watch]
+                set_visible: self.label != "🚩",
+
+            },
+            #[name(test_grid)]
+             gtk::Grid {
+                #[watch]
+                set_visible: self.label == "🚩",
+                set_hexpand: true,
+                set_vexpand: true,
+                #[watch]
+                set_css_classes: &self.css_classes.iter().map(std::string::String::as_str).collect::<Vec<&str>>(),
+            }
         }
     }
 
@@ -95,6 +110,16 @@ impl FactoryComponent for ButtonCell {
         _sender: FactorySender<Self>,
     ) -> Self::Widgets {
         let button = view_output!();
+
+        let picture = gtk::Image::from_paintable(Some(&gtk::gdk::Texture::for_pixbuf(
+            &gtk::gdk_pixbuf::Pixbuf::from_read(FLAG_ICON).expect("Failed to create pixbuf"),
+        )));
+        picture.set_hexpand(true);
+        picture.set_vexpand(true);
+        picture.set_halign(gtk::Align::Center);
+        picture.set_valign(gtk::Align::Center);
+
+        button.test_grid.attach(&picture, 0, 0, 1, 1);
 
         button
     }
@@ -115,7 +140,6 @@ impl FactoryComponent for ButtonCell {
                 }
                 self.label = label;
             }
-            ButtonMsg::ChangeGridSize(size) => self.grid_size = size,
             ButtonMsg::Reset => {
                 self.label = String::new();
                 self.css_classes = vec!["square-button".to_string()];

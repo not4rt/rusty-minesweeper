@@ -30,8 +30,9 @@ impl GameState {
             difficulty,
             status: GameStatus::New,
             start_time: None,
-            elapsed_seconds: 0,
-            revealed_cells: HashSet::with_capacity(difficulty.board_size.pow(2)),
+            revealed_cells: HashSet::with_capacity(
+                difficulty.board_size.0 * difficulty.board_size.1,
+            ),
             flagged_cells: HashSet::with_capacity(difficulty.mines_count),
             custom_flags_remaining: 0,
         })
@@ -56,7 +57,8 @@ impl GameState {
 
     fn check_win_condition(&mut self) -> bool {
         if self.board.revealed_count()
-            == (self.difficulty.board_size.pow(2) - self.difficulty.mines_count)
+            == ((self.difficulty.board_size.0 * self.difficulty.board_size.1)
+                - self.difficulty.mines_count)
             && !self.status.is_lost()
         {
             self.status = GameStatus::Won;

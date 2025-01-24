@@ -1,4 +1,4 @@
-use crate::components::button_cell::{ButtonCell, ButtonMsg, ButtonOutput};
+use crate::components::button_cell::{ButtonCell, ButtonMsg};
 use crate::game::models::board::RevealResult;
 use crate::game::models::cell::CellPosition;
 use crate::game::models::game::GameDifficulty;
@@ -12,7 +12,7 @@ use relm4::{ComponentParts, RelmWidgetExt, SimpleComponent};
 use std::rc::Rc;
 use std::time::Duration;
 
-const APP_ICON: &[u8] = include_bytes!("../logo.png");
+const APP_ICON: &[u8] = include_bytes!("../assets/logo.png");
 const REVEALED_CELL_CLASS: &str = "revealed-cell";
 const LOST_CELL_CLASS: &str = "lost-cell";
 const EMPTY_STRING: String = String::new();
@@ -51,8 +51,6 @@ pub struct App {
 #[derive(Debug)]
 pub enum Msg {
     Restart,
-    Reveal(usize),
-    Flag(usize),
     ChangeDifficulty(GameDifficulty),
     ShowAbout,
     Tick,
@@ -199,12 +197,8 @@ impl SimpleComponent for App {
     ) -> ComponentParts<Self> {
         let game_state = GameState::new(difficulty).expect("Failed to create game state");
 
-        let cells: FactoryVecDeque<ButtonCell> = FactoryVecDeque::builder()
-            .launch_default()
-            .forward(sender.input_sender(), |msg| match msg {
-                ButtonOutput::Reveal(index) => Msg::Reveal(index),
-                ButtonOutput::Flag(index) => Msg::Flag(index),
-            });
+        let cells: FactoryVecDeque<ButtonCell> =
+            FactoryVecDeque::builder().launch_default().detach();
 
         // let sender_clone = sender.clone();
         // gtk::glib::timeout_add_seconds_local(1, move || {
@@ -232,8 +226,6 @@ impl SimpleComponent for App {
     fn update(&mut self, message: Self::Input, _sender: relm4::ComponentSender<Self>) {
         match message {
             Msg::Restart => self.handle_restart(),
-            Msg::Reveal(index) => self.handle_reveal(index),
-            Msg::Flag(index) => self.handle_flag(index),
             Msg::Tick => self.game_state.tick(),
             Msg::ChangeDifficulty(difficulty) => self.handle_difficulty_change(difficulty),
             Msg::ShowAbout => Self::show_about_dialog(),
@@ -253,10 +245,12 @@ impl App {
 
         let mut cells_guard = cells.guard();
 
-        while cells_guard.len() < (board_size * board_size) {
-            cells_guard.push_back(ButtonCell::new(board_size));
+        for x in 0..board_size.0 {
+            for y in 0..board_size.1 {
+                cells_guard.push_back(ButtonCell::new(CellPosition::new(x, y)));
+            }
         }
-        drop(cells_guard);
+        cells_guard.drop();
 
         Self {
             game_state,
@@ -274,10 +268,7 @@ impl App {
         self.cells.broadcast(ButtonMsg::Reset);
     }
 
-    fn handle_reveal(&mut self, index: usize) {
-        let board_size = self.game_state.difficulty().board_size;
-        let cell_pos = CellPosition::from_index(index, board_size);
-
+    fn handle_reveal(&mut self, cell_pos: CellPosition) {
         let reveal_result = self.game_state.reveal_cell(cell_pos);
 
         if let Ok(reveal_result) = reveal_result {
@@ -319,11 +310,13 @@ impl App {
         }
     }
 
-    fn handle_flag(&mut self, index: usize) {
-        let cell_pos = CellPosition::from_index(index, self.game_state.difficulty().board_size);
+    fn handle_flag(&mut self, cell_pos: CellPosition) {
         if matches!(self.game_state.toggle_flag(cell_pos), Ok(true)) {
             if let Ok(display) = self.game_state.display_cell(cell_pos) {
-                self.cells.send(index, ButtonMsg::Display(display));
+                self.cells.send(
+                    cell_pos.to_index(self.game_state.difficulty().board_size),
+                    ButtonMsg::Display(display),
+                );
             }
         }
     }
@@ -336,15 +329,17 @@ impl App {
         // Reset mouse tracker
         self.mouse_tracker = MouseTracker::new();
 
-        let new_size = difficulty.board_size * difficulty.board_size;
+        let new_size = difficulty.board_size.0 * difficulty.board_size.1;
         if self.cells.len() == new_size {
             self.cells.broadcast(ButtonMsg::Reset);
         } else {
             let mut cells_guard = self.cells.guard();
             cells_guard.clear();
 
-            while cells_guard.len() < new_size {
-                cells_guard.push_back(ButtonCell::new(difficulty.board_size));
+            for x in 0..difficulty.board_size.0 {
+                for y in 0..difficulty.board_size.1 {
+                    cells_guard.push_back(ButtonCell::new(CellPosition::new(x, y)));
+                }
             }
         }
     }
@@ -352,8 +347,7 @@ impl App {
     fn show_about_dialog() {
         let dialog = gtk::AboutDialog::builder()
             .program_name("Rusty Minesweeper")
-            .version("2.0")
-            .authors(vec!["not4rt".to_string()])
+            .version("1.0")
             .comments("A Minesweeper clone written in Rust using GTK4 and Relm4")
             .build();
 
@@ -422,7 +416,11 @@ impl App {
             || y > f64::from(self.cells.widget().height())
         {
             if let Some(old_cell_pos) = self.mouse_tracker.mouse_cell.take() {
-                self.deactivate_cell(old_cell_pos, &MouseButton::Middle);
+                let button = match self.mouse_tracker.lbutton_state {
+                    MouseState::Pressed => MouseButton::Left,
+                    MouseState::Released => MouseButton::Middle,
+                };
+                self.deactivate_cell(old_cell_pos, &button);
             }
             return;
         }
@@ -430,10 +428,10 @@ impl App {
         // Calculate new cell position
         #[allow(clippy::cast_possible_truncation)]
         #[allow(clippy::cast_precision_loss)]
-        let cell_width = f64::from(self.cells.widget().width()) / board_size as f64;
+        let cell_width = f64::from(self.cells.widget().width()) / board_size.0 as f64;
         #[allow(clippy::cast_possible_truncation)]
         #[allow(clippy::cast_precision_loss)]
-        let cell_height = f64::from(self.cells.widget().height()) / board_size as f64;
+        let cell_height = f64::from(self.cells.widget().height()) / board_size.1 as f64;
         #[allow(clippy::cast_possible_truncation)]
         #[allow(clippy::cast_precision_loss)]
         #[allow(clippy::cast_sign_loss)]
@@ -449,10 +447,7 @@ impl App {
             return;
         }
 
-        // Deactivate old cell if it exists
-        if let Some(old_cell_pos) = self.mouse_tracker.mouse_cell.take() {
-            self.deactivate_cell(old_cell_pos, &MouseButton::Middle);
-        }
+        let old_cell_pos = self.mouse_tracker.mouse_cell.take();
 
         // Store the new cell position
         self.mouse_tracker.mouse_cell = Some(cell_pos);
@@ -460,6 +455,17 @@ impl App {
 
         // Activate cell if mouse is pressed and cell isn't flagged
         if self.mouse_tracker.is_pressed() {
+            // Deactivate old cell if it exists and mouse is pressed
+            if let Some(old_cell_pos) = old_cell_pos {
+                let button = if self.mouse_tracker.mbutton_state == MouseState::Pressed {
+                    MouseButton::Middle
+                } else {
+                    MouseButton::Left
+                };
+
+                self.deactivate_cell(old_cell_pos, &button);
+            }
+
             self.activate_cell(cell_pos);
         }
     }
@@ -479,9 +485,8 @@ impl App {
         self.mouse_tracker.mbutton_state = MouseState::Released;
 
         if let Some(cell_pos) = self.mouse_tracker.mouse_cell {
-            self.deactivate_cell(cell_pos, &MouseButton::Middle);
-            let index = cell_pos.to_index(self.game_state.difficulty().board_size);
-            self.handle_reveal(index);
+            self.deactivate_cell(cell_pos, &MouseButton::Left);
+            self.handle_reveal(cell_pos);
         }
     }
 
@@ -489,8 +494,7 @@ impl App {
     fn rightbutton_pressed(&mut self) {
         if let Some(cell_pos) = self.mouse_tracker.mouse_cell.take() {
             self.deactivate_cell(cell_pos, &MouseButton::Middle);
-            let index = cell_pos.to_index(self.game_state.difficulty().board_size);
-            self.handle_flag(index);
+            self.handle_flag(cell_pos);
         }
 
         // GTK4: Handle the strange behavior of the left button not being released when right button is pressed
@@ -601,7 +605,7 @@ enum MouseState {
 }
 
 enum MouseButton {
-    // Left,
+    Left,
     Middle,
     // Right,
 }

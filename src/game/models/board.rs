@@ -13,7 +13,7 @@ pub enum RevealResult {
 
 pub struct Board {
     cells: Vec<Vec<Cell>>,
-    size: usize,
+    size: (usize, usize),
     mine_positions: HashSet<CellPosition>,
     revealed_count: usize,
     flagged_count: isize,
@@ -39,7 +39,7 @@ impl Board {
         Self::validate_difficulty(difficulty)?;
 
         let mut board = Self {
-            cells: vec![vec![Cell::default(); difficulty.board_size]; difficulty.board_size],
+            cells: vec![vec![Cell::default(); difficulty.board_size.1]; difficulty.board_size.0],
             size: difficulty.board_size,
             mine_positions: HashSet::with_capacity(difficulty.mines_count),
             revealed_count: 0,
@@ -64,12 +64,12 @@ impl Board {
     /// * Returns `GameError::InvalidBoardSize` if board size is 0
     /// * Returns `GameError::InvalidMinesCount` if mines count is 0 or exceeds board capacity
     /// * Returns `GameError::InvalidCellPosition` if the position is invalid
-    pub const fn validate_difficulty(difficulty: GameDifficulty) -> GameResult<()> {
-        if difficulty.board_size == 0 {
+    pub fn validate_difficulty(difficulty: GameDifficulty) -> GameResult<()> {
+        if difficulty.board_size == (0, 0) {
             return Err(GameError::InvalidBoardSize(0));
         }
 
-        let board_capacity = difficulty.board_size.pow(2);
+        let board_capacity = difficulty.board_size.0 * difficulty.board_size.1;
         if difficulty.mines_count >= board_capacity || difficulty.mines_count == 0 {
             return Err(GameError::InvalidMinesCount(
                 difficulty.mines_count,
@@ -81,7 +81,7 @@ impl Board {
     }
 
     const fn validate_position(&self, pos: CellPosition) -> GameResult<()> {
-        if pos.x >= self.size || pos.y >= self.size {
+        if pos.x >= self.size.0 || pos.y >= self.size.1 {
             return Err(GameError::InvalidCellPosition(pos.x, pos.y));
         }
         Ok(())
@@ -187,8 +187,8 @@ impl Board {
 
         while mines_placed < mines_count {
             let mine_pos = CellPosition {
-                x: rng.usize(..self.size),
-                y: rng.usize(..self.size),
+                x: rng.usize(..self.size.0),
+                y: rng.usize(..self.size.1),
             };
 
             if !self.cells[mine_pos.x][mine_pos.y].is_mine() && mine_pos != revealed_cell {
@@ -248,7 +248,8 @@ impl Board {
             let new_x = pos.x.checked_add_signed(*dx)?;
             let new_y = pos.y.checked_add_signed(*dy)?;
 
-            (new_x < self.size && new_y < self.size).then_some(CellPosition { x: new_x, y: new_y })
+            (new_x < self.size.0 && new_y < self.size.1)
+                .then_some(CellPosition { x: new_x, y: new_y })
         })
     }
 
@@ -293,7 +294,7 @@ impl Board {
     }
 
     #[must_use]
-    pub const fn size(&self) -> usize {
+    pub const fn size(&self) -> (usize, usize) {
         self.size
     }
 }
