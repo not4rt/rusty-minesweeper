@@ -3,7 +3,7 @@ name: "Rust Minesweeper"
 on:
   push:
     tags:
-      - 'v*'  # Trigger on new tags starting with 'v'
+      - 'v*'
   pull_request:
 
 env:
@@ -72,7 +72,7 @@ jobs:
       - name: Rename Linux binary
         run: mv target/release/rusty-minesweeper target/release/rusty-minesweeper-linux
       - name: Upload Linux binary
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: rusty-minesweeper-linux
           path: target/release/rusty-minesweeper-linux
@@ -96,9 +96,9 @@ jobs:
       - name: Rename Windows binary
         run: mv target/release/rusty-minesweeper.exe target/release/rusty-minesweeper-windows.exe
       - name: Upload Windows binary
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: rusty-minesweeper-windows.exe
+          name: rusty-minesweeper-windows
           path: target/release/rusty-minesweeper-windows.exe
 
   release:
@@ -108,19 +108,15 @@ jobs:
 
     steps:
       - name: Download Linux binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: rusty-minesweeper-linux
-          path: dist
-      - name: Download Windows binary
-        uses: actions/download-artifact@v3
-        with:
-          name: rusty-minesweeper-windows.exe
+          pattern: rusty-minesweeper-*
+          merge-multiple: true
           path: dist
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}  # Use the tag that triggered the workflow
+          tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
           body: "Automated release for ${{ github.ref_name }}"
           files: |
