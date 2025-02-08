@@ -1,0 +1,128 @@
+name: "Rust Minesweeper"
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on new tags starting with 'v'
+  pull_request:
+
+env:
+  RUST_TOOLCHAIN: stable
+  TOOLCHAIN_PROFILE: minimal
+
+jobs:
+  fmt:
+    name: Check Style
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          components: rustfmt
+      - run: cargo fmt --all -- --check
+
+
+  clippy:
+    name: Run Clippy
+    needs: [fmt]
+    runs-on: ubuntu-latest
+    
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          components: rustfmt
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+      - name: Install GTK4 requirements
+        run: sudo apt install libgtk-4-dev build-essential
+      - name: Run cargo clippy
+        run: cargo clippy -- -W clippy::nursery -W clippy::pedantic -W rust-2018-idioms -W rust-2021-compatibility
+
+  build-linux:
+    name: Build Linux Binary
+    needs: [fmt, clippy]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          components: rustfmt
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+      - name: Install GTK4 requirements
+        run: sudo apt install libgtk-4-dev build-essential
+      - name: Run cargo build
+        run: cargo build --release
+      - name: Rename Linux binary
+        run: mv target/release/rusty-minesweeper target/release/rusty-minesweeper-linux
+      - name: Upload Linux binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: rusty-minesweeper-linux
+          path: target/release/rusty-minesweeper-linux
+          
+  build-windows:
+    name: Build Windows Binary
+    needs: [fmt, clippy]
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          components: rustfmt
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+      - name: Run cargo build
+        run: cargo build --release
+      - name: Rename Windows binary
+        run: mv target/release/rusty-minesweeper.exe target/release/rusty-minesweeper-windows.exe
+      - name: Upload Windows binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: rusty-minesweeper-windows.exe
+          path: target/release/rusty-minesweeper-windows.exe
+
+  release:
+    name: Create Release
+    needs: [build-linux, build-windows]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download Linux binary
+        uses: actions/download-artifact@v3
+        with:
+          name: rusty-minesweeper-linux
+          path: dist
+      - name: Download Windows binary
+        uses: actions/download-artifact@v3
+        with:
+          name: rusty-minesweeper-windows.exe
+          path: dist
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}  # Use the tag that triggered the workflow
+          name: Release ${{ github.ref_name }}
+          body: "Automated release for ${{ github.ref_name }}"
+          files: |
+            dist/rusty-minesweeper-linux
+            dist/rusty-minesweeper-windows.exe
