@@ -1,5 +1,7 @@
 use std::fmt;
 
+use super::board::BoardSize;
+
 pub enum GameStatus {
     Won,
     Lost,
@@ -50,33 +52,81 @@ impl Default for GameStatus {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct GameDifficulty {
-    pub board_size: (usize, usize),
-    pub mines_count: usize,
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum GameDifficulty {
+    Beginner,
+    Intermediate,
+    Expert,
+    Custom(BoardSize, usize),
 }
 
 impl GameDifficulty {
-    pub const BEGINNER: Self = Self {
-        board_size: (9, 9),
-        mines_count: 10,
-    };
-    pub const INTERMEDIATE: Self = Self {
-        board_size: (16, 16),
-        mines_count: 40,
-    };
-    pub const EXPERT: Self = Self {
-        board_size: (30, 16),
-        mines_count: 100,
-    };
-    pub const CUSTOM: Self = Self {
-        board_size: (100, 100),
-        mines_count: 10,
-    };
+    #[must_use]
+    pub const fn board_size(&self) -> BoardSize {
+        match self {
+            Self::Beginner => BoardSize {
+                width: 9,
+                height: 9,
+            },
+            Self::Intermediate => BoardSize {
+                width: 16,
+                height: 16,
+            },
+            Self::Expert => BoardSize {
+                width: 30,
+                height: 16,
+            },
+            Self::Custom(board_size, _) => *board_size,
+        }
+    }
+    #[must_use]
+    pub const fn mines_count(&self) -> usize {
+        match self {
+            Self::Beginner => 10,
+            Self::Intermediate => 40,
+            Self::Expert => 99,
+            Self::Custom(_, mines_count) => *mines_count,
+        }
+    }
+
+    pub const fn set_width(&mut self, width: usize) {
+        *self = Self::Custom(
+            BoardSize {
+                width,
+                height: self.board_size().height,
+            },
+            self.mines_count(),
+        );
+    }
+
+    pub const fn set_height(&mut self, height: usize) {
+        *self = Self::Custom(
+            BoardSize {
+                width: self.board_size().width,
+                height,
+            },
+            self.mines_count(),
+        );
+    }
+
+    pub const fn set_mines_count(&mut self, mines_count: usize) {
+        *self = Self::Custom(
+            BoardSize {
+                width: self.board_size().width,
+                height: self.board_size().height,
+            },
+            mines_count,
+        );
+    }
+
+    #[must_use]
+    pub const fn is_custom(&self) -> bool {
+        matches!(self, Self::Custom(_, _))
+    }
 }
 
 impl Default for GameDifficulty {
     fn default() -> Self {
-        Self::BEGINNER
+        Self::Beginner
     }
 }

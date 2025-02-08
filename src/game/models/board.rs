@@ -11,9 +11,21 @@ pub enum RevealResult {
     CantReveal,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct BoardSize {
+    pub width: usize,
+    pub height: usize,
+}
+
+impl From<(usize, usize)> for BoardSize {
+    fn from((width, height): (usize, usize)) -> Self {
+        Self { width, height }
+    }
+}
+
 pub struct Board {
     cells: Vec<Vec<Cell>>,
-    size: (usize, usize),
+    size: BoardSize,
     mine_positions: HashSet<CellPosition>,
     revealed_count: usize,
     flagged_count: isize,
@@ -39,14 +51,17 @@ impl Board {
         Self::validate_difficulty(difficulty)?;
 
         let mut board = Self {
-            cells: vec![vec![Cell::default(); difficulty.board_size.1]; difficulty.board_size.0],
-            size: difficulty.board_size,
-            mine_positions: HashSet::with_capacity(difficulty.mines_count),
+            cells: vec![
+                vec![Cell::default(); difficulty.board_size().height];
+                difficulty.board_size().width
+            ],
+            size: difficulty.board_size(),
+            mine_positions: HashSet::with_capacity(difficulty.mines_count()),
             revealed_count: 0,
             flagged_count: 0,
         };
 
-        board.place_mines(difficulty.mines_count, revealed_cell);
+        board.place_mines(difficulty.mines_count(), revealed_cell);
         board.calculate_adjacent_mines();
 
         if let Some(flagged_cells) = flagged_cells {
@@ -65,15 +80,15 @@ impl Board {
     /// * Returns `GameError::InvalidMinesCount` if mines count is 0 or exceeds board capacity
     /// * Returns `GameError::InvalidCellPosition` if the position is invalid
     pub fn validate_difficulty(difficulty: GameDifficulty) -> GameResult<()> {
-        if difficulty.board_size == (0, 0) {
+        if difficulty.board_size() == (0, 0).into() {
             return Err(GameError::InvalidBoardSize(0));
         }
 
-        let board_capacity = difficulty.board_size.0 * difficulty.board_size.1;
-        if difficulty.mines_count >= board_capacity || difficulty.mines_count == 0 {
+        let board_capacity = difficulty.board_size().width * difficulty.board_size().height;
+        if difficulty.mines_count() >= board_capacity || difficulty.mines_count() == 0 {
             return Err(GameError::InvalidMinesCount(
-                difficulty.mines_count,
-                difficulty.board_size,
+                difficulty.mines_count(),
+                difficulty.board_size(),
             ));
         }
 
@@ -81,7 +96,7 @@ impl Board {
     }
 
     const fn validate_position(&self, pos: CellPosition) -> GameResult<()> {
-        if pos.x >= self.size.0 || pos.y >= self.size.1 {
+        if pos.x >= self.size.width || pos.y >= self.size.height {
             return Err(GameError::InvalidCellPosition(pos.x, pos.y));
         }
         Ok(())
@@ -187,8 +202,8 @@ impl Board {
 
         while mines_placed < mines_count {
             let mine_pos = CellPosition {
-                x: rng.usize(..self.size.0),
-                y: rng.usize(..self.size.1),
+                x: rng.usize(..self.size.width),
+                y: rng.usize(..self.size.height),
             };
 
             if !self.cells[mine_pos.x][mine_pos.y].is_mine() && mine_pos != revealed_cell {
@@ -248,7 +263,7 @@ impl Board {
             let new_x = pos.x.checked_add_signed(*dx)?;
             let new_y = pos.y.checked_add_signed(*dy)?;
 
-            (new_x < self.size.0 && new_y < self.size.1)
+            (new_x < self.size.width && new_y < self.size.height)
                 .then_some(CellPosition { x: new_x, y: new_y })
         })
     }
@@ -294,7 +309,7 @@ impl Board {
     }
 
     #[must_use]
-    pub const fn size(&self) -> (usize, usize) {
+    pub const fn size(&self) -> BoardSize {
         self.size
     }
 }

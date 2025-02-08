@@ -1,0 +1,303 @@
+/* Variables */
+@define-color background-color #c0c0c0;
+@define-color shadow-color #707070;
+@define-color light-color white;
+@define-color red-color #ff2c2c;
+@define-color blue-color #064add;
+
+button.restart_button {
+    font-size: 140%;
+    border-radius: 0;
+    border-top: 3px solid @light-color;
+    border-left: 3px solid @light-color;
+    border-right: 4px solid @shadow-color;
+    border-bottom: 4px solid @shadow-color;
+    margin-bottom: -4px;
+    background-color: @background-color;
+    background-image: none;
+    box-shadow: @shadow-color -1px -1px 0px 0px;
+}
+
+button.restart_button:active {
+    border-top: 2px solid @shadow-color;
+    border-left: 2px solid @shadow-color;
+    border-right: 1px solid @shadow-color;
+    border-bottom: 1px solid @shadow-color;
+    margin-bottom: 0;
+}
+
+label.mines_remaining_label,
+label.time_remaining_label {
+    font-size: 250%;
+    margin: 0;
+    padding: 0;
+    line-height: 0.7;
+    font-family: "Ubuntu Mono", monospace;
+    font-size: xx-large;
+    font-weight: bold;
+    color: @red-color;
+    background-color: #1A1A1A;
+    border-top: 2px solid @shadow-color;
+    border-left: 2px solid @shadow-color;
+    border-right: 2px solid @light-color;
+    border-bottom: 2px solid @light-color;
+}
+
+.square-button {
+    min-width: 20px;
+    min-height: 20px;
+    border-radius: 0;
+    border-top: 3px solid @light-color;
+    border-left: 3px solid @light-color;
+    border-right: 4px solid @shadow-color;
+    border-bottom: 4px solid @shadow-color;
+    background-color: @background-color;
+    background-image: none;
+    margin-top: -1px;
+    margin-left: -1px;
+}
+
+.main-box {
+    border-left: 4px solid @blue-color;
+    border-right: 4px solid @blue-color;
+    border-bottom: 4px solid @blue-color;
+    background-color: @background-color;
+}
+
+.inner-box {
+    border-top: 4px solid @light-color;
+    border-left: 4px solid @light-color;
+    background-color: @background-color;
+    outline-color: @background-color;
+    padding: 10px;
+    margin: -5px;
+}
+
+.top-box {
+    border-top: 3px solid @shadow-color;
+    border-left: 3px solid @shadow-color;
+    border-right: 3px solid @light-color;
+    border-bottom: 3px solid @light-color;
+    padding: 10px;
+}
+
+.bottom-box {
+    border-top: 5px solid @shadow-color;
+    border-left: 5px solid @shadow-color;
+    border-right: 5px solid @light-color;
+    border-bottom: 5px solid @light-color;
+}
+
+.active,
+.revealed-cell {
+    font-weight: bolder;
+    border-top: 1px solid @shadow-color;
+    border-left: 1px solid @shadow-color;
+    border-right: none;
+    border-bottom: none;
+    background-color: @background-color;
+}
+
+.lost-cell {
+    background-color: @red-color;
+}
+
+.number-one {
+    color: #0000FF;
+}
+
+.number-two {
+    color: #008000;
+}
+
+.number-three {
+    color: #FF0000;
+}
+
+.number-four {
+    color: #000080;
+}
+
+.number-five {
+    color: #800000;
+}
+
+.number-six {
+    color: #008080;
+}
+
+.number-seven {
+    color: #000000;
+}
+
+.number-eight {
+    color: #808080;
+}
+
+/* 
+General Styles
+ */
+
+/* button,
+label {
+    transition: all 0.2s;
+    transition-timing-function: ease-out;
+} */
+
+
+popover,
+contents,
+.aboutdialog,
+viewport,
+.menu-bar,
+box.main-box>box.horizontal {
+    background-color: #eceacf;
+    border-radius: 0;
+    border-color: #000000;
+    color: #000000;
+    caret-color: #000000;
+    outline-color: #000000;
+    text-decoration-color: #000000;
+}
+
+item {
+    background-color: #eceacf;
+    border-color: #000000;
+    color: #000000;
+    caret-color: #000000;
+    outline-color: #000000;
+    padding-bottom: 3px;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-top: 3px;
+    text-decoration-color: #000000;
+}
+
+headerbar {
+    min-height: 30px;
+    padding: 4px 8px;
+    color: #000000;
+    background-color: #ECE9D8;
+    background-size: 1px 100%;
+    box-shadow: none;
+}
+
+headerbar .title {
+    padding-left: 12px;
+    padding-right: 12px;
+    font-weight: bold;
+}
+
+headerbar .subtitle {
+    font-size: smaller;
+    padding-left: 12px;
+    padding-right: 12px;
+    color: alpha(currentColor, 0.7);
+}
+
+headerbar .title {
+    color: #FFFFFF;
+    text-shadow: 1px 1px black;
+}
+
+headerbar .title:backdrop {
+    text-shadow: none;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+headerbar .subtitle {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+headerbar button {
+    border-color: transparent;
+    background-color: transparent;
+    background-image: none;
+    text-shadow: none;
+    box-shadow: none;
+    -gtk-icon-shadow: none;
+    color: #FFFFFF;
+}
+
+headerbar button:hover,
+headerbar button:hover:focus {
+    border-color: #204e86;
+    color: #000000;
+    background-image: linear-gradient(to left, rgba(0, 0, 0, 0.045) 1px, rgba(0, 0, 0, 0.006) 2px, transparent 2px), linear-gradient(to top, rgba(0, 0, 0, 0.13), transparent 3px), linear-gradient(to bottom, #f4f2e7, #ECE9D8 3px, #e7e4cf 7px, #e6e2cc 50%, #e4e0c9);
+    box-shadow: inset 0 0 0 2px #ffc73c;
+}
+
+headerbar button:active {
+    border-color: #204e86;
+    color: #000000;
+    background-color: #e4e0c9;
+    background-image: linear-gradient(to right, rgba(0, 0, 0, 0.045) 1px, rgba(0, 0, 0, 0.006) 2px, transparent 2px), linear-gradient(to bottom, rgba(0, 0, 0, 0.13), transparent 3px), linear-gradient(to top, #f4f2e7, #ECE9D8 3px, #e7e4cf 7px, #e6e2cc 50%, #e4e0c9);
+}
+
+headerbar button:checked {
+    border-color: #204e86;
+    color: #000000;
+    background-color: #e4e0c9;
+    background-image: linear-gradient(to right, rgba(0, 0, 0, 0.045) 1px, rgba(0, 0, 0, 0.006) 2px, transparent 2px), linear-gradient(to bottom, rgba(0, 0, 0, 0.13), transparent 3px), linear-gradient(to top, #f4f2e7, #ECE9D8 3px, #e7e4cf 7px, #e6e2cc 50%, #e4e0c9);
+}
+
+headerbar.titlebar,
+.titlebar headerbar {
+    border-radius: 6px 6px 0px 0px;
+    background-color: @blue-color;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    background-image: none;
+    /* margin-bottom: -10px; */
+}
+
+headerbar windowcontrols {
+    border-spacing: 0;
+}
+
+headerbar windowcontrols button.close {
+    padding: 0px;
+    min-width: 21px;
+    min-height: 21px;
+    background-size: 21px 21px;
+    background-position: center center;
+    background-repeat: no-repeat;
+    box-shadow: none;
+    border-radius: 4px;
+
+    background-color: #FF0000;
+    color: #FFFFFF;
+    font-weight: bolder;
+    border: 1px solid white;
+}
+
+headerbar windowcontrols button.maximize {
+    padding: 0px;
+    min-width: 21px;
+    min-height: 21px;
+    border: none;
+    color: transparent;
+    background-color: transparent;
+    background-size: 21px 21px;
+    background-position: center center;
+    background-repeat: no-repeat;
+    box-shadow: none;
+    border-radius: 4px;
+}
+
+headerbar windowcontrols button.minimize {
+    padding: 0px;
+    min-width: 21px;
+    min-height: 21px;
+    background-size: 21px 21px;
+    background-position: center center;
+    background-repeat: no-repeat;
+    box-shadow: none;
+    border-radius: 4px;
+
+    background-color: @blue-color;
+    color: #FFFFFF;
+    font-weight: bolder;
+    border: 1px solid white;
+    margin-right: 1px;
+}

@@ -5,14 +5,17 @@ use crate::game::models::game::{GameDifficulty, GameStatus};
 use std::collections::{HashSet, VecDeque};
 use std::time::{Duration, Instant};
 
+use super::models::statistics::Statistics;
+
 pub struct GameState {
     board: Board,
     difficulty: GameDifficulty,
     status: GameStatus,
     start_time: Option<Instant>,
-    elapsed_seconds: u64,
+    elapsed_time: Duration,
     revealed_cells: HashSet<CellPosition>,
     flagged_cells: HashSet<CellPosition>,
+    statistics: Statistics,
     custom_flags_remaining: isize,
 }
 
@@ -30,10 +33,12 @@ impl GameState {
             difficulty,
             status: GameStatus::New,
             start_time: None,
+            elapsed_time: Duration::new(0, 0),
             revealed_cells: HashSet::with_capacity(
-                difficulty.board_size.0 * difficulty.board_size.1,
+                difficulty.board_size().width * difficulty.board_size().height,
             ),
-            flagged_cells: HashSet::with_capacity(difficulty.mines_count),
+            flagged_cells: HashSet::with_capacity(difficulty.mines_count()),
+            statistics: Statistics::default(),
             custom_flags_remaining: 0,
         })
     }
@@ -47,9 +52,11 @@ impl GameState {
         self.board = board;
         self.status = GameStatus::New;
         self.start_time = None;
-        self.elapsed_seconds = 0;
-        self.revealed_cells = HashSet::with_capacity(self.difficulty.board_size.pow(2));
-        self.flagged_cells = HashSet::with_capacity(self.difficulty.mines_count);
+        self.elapsed_time = Duration::new(0, 0);
+        self.revealed_cells = HashSet::with_capacity(
+            self.difficulty.board_size().width * self.difficulty.board_size().height,
+        );
+        self.flagged_cells = HashSet::with_capacity(self.difficulty.mines_count());
         self.custom_flags_remaining = 0;
 
         Ok(())
@@ -57,13 +64,23 @@ impl GameState {
 
     fn check_win_condition(&mut self) -> bool {
         if self.board.revealed_count()
-            == ((self.difficulty.board_size.0 * self.difficulty.board_size.1)
-                - self.difficulty.mines_count)
+            == ((self.difficulty.board_size().width * self.difficulty.board_size().height)
+                - self.difficulty.mines_count())
             && !self.status.is_lost()
         {
             self.status = GameStatus::Won;
             self.board.flag_mines();
             self.flagged_cells.extend(self.board.mine_positions());
+
+            if !self.difficulty.is_custom()
+                && self.elapsed_time < self.statistics.get_statistic(self.difficulty).total_time
+            {
+                self.statistics.add_best_time(
+                    self.difficulty,
+                    // "Anonymous".to_string(),
+                    self.elapsed_time,
+                );
+            }
             return true;
         }
         false
@@ -183,11 +200,19 @@ impl GameState {
     #[must_use]
     pub fn flags_remaining(&self) -> isize {
         if self.custom_flags_remaining
-            < self.difficulty.mines_count.try_into().unwrap_or(isize::MAX)
+            < self
+                .difficulty
+                .mines_count()
+                .try_into()
+                .unwrap_or(isize::MAX)
         {
             self.custom_flags_remaining
         } else {
-            let mines_count = self.difficulty.mines_count.try_into().unwrap_or(isize::MAX);
+            let mines_count = self
+                .difficulty
+                .mines_count()
+                .try_into()
+                .unwrap_or(isize::MAX);
             mines_count - (self.board.flagged_count())
         }
     }
@@ -198,9 +223,9 @@ impl GameState {
     }
 
     #[must_use]
-    pub const fn elapsed_seconds(&self) -> u64 {
-        if self.elapsed_seconds < 999 {
-            self.elapsed_seconds
+    pub fn elapsed_seconds(&self) -> u64 {
+        if self.elapsed_time < Duration::from_secs(999) {
+            self.elapsed_time.as_secs()
         } else {
             999
         }
@@ -211,15 +236,24 @@ impl GameState {
         &self.difficulty
     }
 
+    #[must_use]
+    pub const fn statistics(&self) -> &Statistics {
+        &self.statistics
+    }
+
     pub fn tick(&mut self) {
         if self.status.is_in_progress() {
             if let Some(start_time) = self.start_time {
-                self.elapsed_seconds = start_time.elapsed().as_secs();
+                self.elapsed_time = start_time.elapsed();
             }
         }
 
         if self.custom_flags_remaining
-            < self.difficulty.mines_count.try_into().unwrap_or(isize::MAX)
+            < self
+                .difficulty
+                .mines_count()
+                .try_into()
+                .unwrap_or(isize::MAX)
         {
             self.custom_flags_remaining = self.custom_flags_remaining.saturating_add(1);
         }
@@ -239,6 +273,10 @@ impl GameState {
         self.restart()?;
 
         Ok(())
+    }
+
+    pub fn reset_stats(&mut self) {
+        self.statistics = Statistics::default();
     }
 
     /// Returns the display string for the cell at the given position.

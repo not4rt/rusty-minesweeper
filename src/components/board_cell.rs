@@ -10,13 +10,13 @@ use crate::game::models::cell::CellPosition;
 const CELL_SIZE: i32 = 20;
 const FLAG_ICON: &[u8] = include_bytes!("../../assets/flag.png");
 
-pub struct ButtonCell {
+pub struct BoardCell {
     pub label: String,
     pub css_classes: Vec<String>,
     pub position: CellPosition,
 }
 
-impl ButtonCell {
+impl BoardCell {
     #[must_use]
     pub fn new(pos: CellPosition) -> Self {
         Self {
@@ -28,7 +28,7 @@ impl ButtonCell {
 }
 
 #[derive(Debug, Clone)]
-pub enum ButtonMsg {
+pub enum BoardCellMsg {
     Display(String),
     Reset,
     AddCssClass(String),
@@ -36,7 +36,7 @@ pub enum ButtonMsg {
     Deactivate,
 }
 
-impl relm4::factory::Position<GridPosition, DynamicIndex> for ButtonCell {
+impl relm4::factory::Position<GridPosition, DynamicIndex> for BoardCell {
     fn position(&self, _index: &DynamicIndex) -> GridPosition {
         let x = self.position.x;
         let y = self.position.y;
@@ -51,9 +51,9 @@ impl relm4::factory::Position<GridPosition, DynamicIndex> for ButtonCell {
 }
 
 #[relm4::factory(pub)]
-impl FactoryComponent for ButtonCell {
+impl FactoryComponent for BoardCell {
     type Init = Self;
-    type Input = ButtonMsg;
+    type Input = BoardCellMsg;
     type Output = ();
     type CommandOutput = ();
     type Widgets = ButtonCellWidgets;
@@ -126,7 +126,7 @@ impl FactoryComponent for ButtonCell {
 
     fn update(&mut self, msg: Self::Input, _sender: FactorySender<Self>) -> Self::CommandOutput {
         match msg {
-            ButtonMsg::Display(label) => {
+            BoardCellMsg::Display(label) => {
                 match label.as_str() {
                     "1" => self.css_classes.push("number-one".to_string()),
                     "2" => self.css_classes.push("number-two".to_string()),
@@ -140,13 +140,13 @@ impl FactoryComponent for ButtonCell {
                 }
                 self.label = label;
             }
-            ButtonMsg::Reset => {
+            BoardCellMsg::Reset => {
                 self.label = String::new();
                 self.css_classes = vec!["square-button".to_string()];
             }
-            ButtonMsg::AddCssClass(class) => self.css_classes.push(class),
-            ButtonMsg::Activate => self.css_classes.push("active".to_string()),
-            ButtonMsg::Deactivate => self.css_classes.retain(|c| c != "active"),
+            BoardCellMsg::AddCssClass(class) => self.css_classes.push(class),
+            BoardCellMsg::Activate => self.css_classes.push("active".to_string()),
+            BoardCellMsg::Deactivate => self.css_classes.retain(|c| c != "active"),
         }
     }
 }

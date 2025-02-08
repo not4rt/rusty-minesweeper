@@ -1,5 +1,7 @@
 use std::fmt;
 
+use super::board::BoardSize;
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum CellContent {
     Mine,
@@ -84,16 +86,16 @@ impl CellPosition {
         Self { x, y }
     }
     #[must_use]
-    pub const fn from_index(index: usize, board_size: (usize, usize)) -> Self {
+    pub const fn from_index(index: usize, board_size: BoardSize) -> Self {
         Self {
-            x: index / board_size.0,
-            y: index % board_size.1,
+            x: index / board_size.width,
+            y: index % board_size.height,
         }
     }
 
     #[must_use]
-    pub const fn to_index(self, board_size: (usize, usize)) -> usize {
-        (self.x * board_size.1) + self.y
+    pub const fn to_index(self, board_size: BoardSize) -> usize {
+        (self.x * board_size.height) + self.y
     }
 }
 
