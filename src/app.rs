@@ -367,6 +367,14 @@ impl App {
                             .send(flag_index, BoardCellMsg::Display("🚩".to_string()));
                     }
                     self.game_state.clear_flagged_cells();
+
+                    if self.statistics_tracker.get() != *self.game_state.statistics() {
+                        self.statistics_tracker.set(*self.game_state.statistics());
+                        let _ = self
+                            .statistics_dialog
+                            .sender()
+                            .send(StatisticsInput::Show(self.statistics_tracker.get()));
+                    }
                 }
             }
             RevealResult::GameOver(mine_pos) => self.cells.send(
@@ -375,8 +383,6 @@ impl App {
             ),
             RevealResult::CantReveal => (),
         }
-
-        self.statistics_tracker.set(*self.game_state.statistics());
     }
 
     fn handle_flag(&mut self, cell_pos: CellPosition) {

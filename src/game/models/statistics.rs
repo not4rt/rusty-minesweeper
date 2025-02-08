@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use super::game::GameDifficulty;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FastestTime {
     // pub nickname: String,
     pub total_time: Duration,
@@ -30,7 +30,7 @@ impl Default for FastestTime {
     }
 }
 
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct Statistics {
     begginer: FastestTime,
     intermediate: FastestTime,
